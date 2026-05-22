@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": "^24.16.0"
   },
   "overrides": {
     "serialize-javascript": "^7.0.4"
@@ -32,7 +32,9 @@
     "prebuild:bundle": "tsx scripts/fetch-gallery.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "chromatic": "chromatic"
+    "chromatic": "chromatic",
+    "update-node-engine": "node scripts/update-node-engine.mjs",
+    "update-node-engine:dry": "node scripts/update-node-engine.mjs --dry-run"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
