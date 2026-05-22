@@ -226,7 +226,9 @@ async function main() {
   console.log(`\n📄 Current engines.node: "${currentEngines}"`);
   console.log(`   ↳ Node ${activeMajor} min: ${currentActiveVersion ?? "(not tracked)"}`);
   if (maintenanceMajor !== activeMajor) {
-    console.log(`   ↳ Node ${maintenanceMajor} min: ${currentMaintenanceVersion ?? "(not tracked)"}`);
+    console.log(
+      `   ↳ Node ${maintenanceMajor} min: ${currentMaintenanceVersion ?? "(not tracked)"}`,
+    );
   }
 
   // ── Determine if updates are needed ────────────────────────────────────────
@@ -234,7 +236,8 @@ async function main() {
 
   const activeNeedsUpdate = !currentActiveVersion || isNewer(currentActiveVersion, activeLts.raw);
 
-  const maintenanceNeedsUpdate = maintenanceMajor !== activeMajor &&
+  const maintenanceNeedsUpdate =
+    maintenanceMajor !== activeMajor &&
     (!currentMaintenanceVersion || isNewer(currentMaintenanceVersion, maintenanceLts.raw));
 
   if (activeNeedsUpdate) {
