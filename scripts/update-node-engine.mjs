@@ -34,7 +34,7 @@ import { fileURLToPath } from "node:url";
  * The patch version within each major is updated automatically by this script.
  */
 const SUPPORTED_LTS_MAJORS = {
-  maintenance: 22, // Node 22 "Jod" — Maintenance LTS
+  maintenance: 24, // Node 24 "Krypton" — Active LTS (now minimum supported)
   active: 24, // Node 24 "Krypton" — Active LTS
 };
 
@@ -141,6 +141,9 @@ function isNewer(current, latest) {
  * the project without errors, which is the right UX for open source contributors.
  */
 function buildEnginesString(maintenanceVersion, activeVersion) {
+  if (maintenanceVersion === activeVersion) {
+    return `^${activeVersion}`;
+  }
   return `^${maintenanceVersion} || ^${activeVersion}`;
 }
 
@@ -204,11 +207,13 @@ async function main() {
   }
 
   console.log(
-    `📦 Latest Node ${maintenanceMajor} (${maintenanceLts.codename}): v${maintenanceLts.raw}${maintenanceLts.security ? " [security]" : ""}`,
-  );
-  console.log(
     `📦 Latest Node ${activeMajor} (${activeLts.codename}): v${activeLts.raw}${activeLts.security ? " [security]" : ""}`,
   );
+  if (maintenanceMajor !== activeMajor) {
+    console.log(
+      `📦 Latest Node ${maintenanceMajor} (${maintenanceLts.codename}): v${maintenanceLts.raw}${maintenanceLts.security ? " [security]" : ""}`,
+    );
+  }
 
   // ── Read current package.json ───────────────────────────────────────────────
   const pkgRaw = readFileSync(PATHS.packageJson, "utf8");
@@ -219,25 +224,33 @@ async function main() {
   const currentActiveVersion = extractVersionFromEngines(currentEngines, activeMajor);
 
   console.log(`\n📄 Current engines.node: "${currentEngines}"`);
-  console.log(`   ↳ Node ${maintenanceMajor} min: ${currentMaintenanceVersion ?? "(not tracked)"}`);
   console.log(`   ↳ Node ${activeMajor} min: ${currentActiveVersion ?? "(not tracked)"}`);
+  if (maintenanceMajor !== activeMajor) {
+    console.log(`   ↳ Node ${maintenanceMajor} min: ${currentMaintenanceVersion ?? "(not tracked)"}`);
+  }
 
   // ── Determine if updates are needed ────────────────────────────────────────
   let engineUpdateNeeded = false;
 
-  const maintenanceNeedsUpdate =
-    !currentMaintenanceVersion || isNewer(currentMaintenanceVersion, maintenanceLts.raw);
-
   const activeNeedsUpdate = !currentActiveVersion || isNewer(currentActiveVersion, activeLts.raw);
 
+  const maintenanceNeedsUpdate = maintenanceMajor !== activeMajor &&
+    (!currentMaintenanceVersion || isNewer(currentMaintenanceVersion, maintenanceLts.raw));
+
+  if (activeNeedsUpdate) {
+    console.log(`⬆️  Node ${activeMajor}: ${currentActiveVersion ?? "not set"} → ${activeLts.raw}`);
+    engineUpdateNeeded = true;
+  }
   if (maintenanceNeedsUpdate) {
     console.log(
       `\n⬆️  Node ${maintenanceMajor}: ${currentMaintenanceVersion ?? "not set"} → ${maintenanceLts.raw}`,
     );
     engineUpdateNeeded = true;
   }
-  if (activeNeedsUpdate) {
-    console.log(`⬆️  Node ${activeMajor}: ${currentActiveVersion ?? "not set"} → ${activeLts.raw}`);
+
+  const desiredEnginesString = buildEnginesString(maintenanceLts.raw, activeLts.raw);
+  if (currentEngines !== desiredEnginesString) {
+    console.log(`⬆️  engines.node: "${currentEngines}" → "${desiredEnginesString}"`);
     engineUpdateNeeded = true;
   }
 
@@ -317,8 +330,10 @@ async function main() {
     nvmrcNeedsUpdate ? `| \`.nvmrc\` | \`${newNvmrc}\` |` : null,
     "",
     "### Release details",
-    `- Node ${maintenanceMajor} (${maintenanceLts.codename}) latest: **v${maintenanceLts.raw}** (${maintenanceLts.date})${maintenanceLts.security ? " 🔐 security release" : ""}`,
     `- Node ${activeMajor} (${activeLts.codename}) latest: **v${activeLts.raw}** (${activeLts.date})${activeLts.security ? " 🔐 security release" : ""}`,
+    maintenanceMajor !== activeMajor
+      ? `- Node ${maintenanceMajor} (${maintenanceLts.codename}) latest: **v${maintenanceLts.raw}** (${maintenanceLts.date})${maintenanceLts.security ? " 🔐 security release" : ""}`
+      : null,
   ]
     .filter((l) => l !== null)
     .join("\n");

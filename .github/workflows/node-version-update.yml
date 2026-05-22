@@ -115,17 +115,6 @@ jobs:
       - name: Create update branch
         id: branch
         if: steps.update.outputs.changes_made == 'true' && inputs.dry_run != 'true'
-        env:
-          # The commit message is placed in an env var to avoid YAML
-          # misinterpreting the leading "-" bullet lines as list items.
-          COMMIT_MSG: |-
-            chore(node): update Node.js engine to latest LTS patches
-
-            - Maintenance LTS (Node ${{ steps.update.outputs.maintenance_version || '22.x' }}): updated minimum patch
-            - Active LTS (Node ${{ steps.update.outputs.active_version || '24.x' }}): updated minimum patch + .nvmrc
-
-            Automated by: .github/workflows/node-version-update.yml
-            Source: https://nodejs.org/en/about/previous-releases
         run: |
           BRANCH_NAME="chore/node-engine-update-$(date +%Y%m%d)"
           echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
@@ -135,6 +124,23 @@ jobs:
 
           git checkout -b "$BRANCH_NAME"
           git add package.json .nvmrc .github/workflows/ci.yml
+
+          MAINTENANCE_VERSION="${{ steps.update.outputs.maintenance_version }}"
+          ACTIVE_VERSION="${{ steps.update.outputs.active_version }}"
+
+          if [ "$MAINTENANCE_VERSION" = "$ACTIVE_VERSION" ]; then
+            COMMIT_MSG="chore(node): update Node.js engine to latest LTS patches"$'\n\n'
+            COMMIT_MSG="${COMMIT_MSG}- Node.js LTS (Node ${ACTIVE_VERSION}): updated minimum patch + .nvmrc"$'\n\n'
+            COMMIT_MSG="${COMMIT_MSG}Automated by: .github/workflows/node-version-update.yml"$'\n'
+            COMMIT_MSG="${COMMIT_MSG}Source: https://nodejs.org/en/about/previous-releases"
+          else
+            COMMIT_MSG="chore(node): update Node.js engine to latest LTS patches"$'\n\n'
+            COMMIT_MSG="${COMMIT_MSG}- Maintenance LTS (Node ${MAINTENANCE_VERSION}): updated minimum patch"$'\n'
+            COMMIT_MSG="${COMMIT_MSG}- Active LTS (Node ${ACTIVE_VERSION}): updated minimum patch + .nvmrc"$'\n\n'
+            COMMIT_MSG="${COMMIT_MSG}Automated by: .github/workflows/node-version-update.yml"$'\n'
+            COMMIT_MSG="${COMMIT_MSG}Source: https://nodejs.org/en/about/previous-releases"
+          fi
+
           git commit -m "$COMMIT_MSG"
 
           git push origin "$BRANCH_NAME"
@@ -156,6 +162,12 @@ jobs:
             SECURITY_NOTE="🔐 **This update includes a security release.** Priority merge recommended."$'\n\n'
           fi
 
+          if [ "$MAINTENANCE_VERSION" = "$ACTIVE_VERSION" ]; then
+            ENGINES_VAL="\`^${ACTIVE_VERSION}\`"
+          else
+            ENGINES_VAL="\`^${MAINTENANCE_VERSION} || ^${ACTIVE_VERSION}\`"
+          fi
+
           cat <<EOF > pr_body.md
           ${SECURITY_NOTE}## What changed
 
@@ -163,7 +175,7 @@ jobs:
 
           | File | Field | Value |
           |------|-------|-------|
-          | \`package.json\` | \`engines.node\` | \`^${MAINTENANCE_VERSION} || ^${ACTIVE_VERSION}\` |
+          | \`package.json\` | \`engines.node\` | ${ENGINES_VAL} |
           | \`ci.yml\` | \`NODE_VERSION\` | \`${{ steps.update.outputs.active_major }}\` |
           | \`.nvmrc\` | — | \`${ACTIVE_VERSION}\` |
 
