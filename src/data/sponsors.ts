@@ -1,6 +1,4 @@
-import { Small } from "@/stories/Button.stories";
 import { type Sponsor, type SponsorTestimonial, type SponsorshipPackage } from "@/types";
-import { on } from "cluster";
 
 /**
  * Unified Sponsors Data Source
@@ -74,7 +72,6 @@ export const sponsorshipPackages: SponsorshipPackage[] = [
     ],
   },
 ];
-
 
 export const sponsors: Record<number, Sponsor[]> = {
   // ... (sponsors data remains unchanged)

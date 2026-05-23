@@ -395,8 +395,9 @@ const Packages: React.FC = React.memo(() => (
           <motion.div
             key={pkg.name}
             variants={fadeUp}
-            className={`relative bg-white rounded-3xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${pkg.highlight ? "lg:scale-105 z-10 border-4 border-white/20 shadow-xl" : ""
-              }`}
+            className={`relative bg-white rounded-3xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${
+              pkg.highlight ? "lg:scale-105 z-10 border-4 border-white/20 shadow-xl" : ""
+            }`}
           >
             {pkg.highlight && (
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-primary text-white text-[10px] font-bold tracking-widest uppercase shadow-lg">
@@ -426,10 +427,11 @@ const Packages: React.FC = React.memo(() => (
             <Dialog>
               <DialogTrigger asChild>
                 <button
-                  className={`w-full py-4 rounded-2xl text-center font-bold text-sm transition-all shadow-sm ${pkg.highlight
-                    ? "bg-primary text-white hover:opacity-90 shadow-primary/20"
-                    : "border-2 border-primary/20 text-primary hover:bg-primary/5"
-                    }`}
+                  className={`w-full py-4 rounded-2xl text-center font-bold text-sm transition-all shadow-sm ${
+                    pkg.highlight
+                      ? "bg-primary text-white hover:opacity-90 shadow-primary/20"
+                      : "border-2 border-primary/20 text-primary hover:bg-primary/5"
+                  }`}
                 >
                   Select Tier
                 </button>
@@ -718,10 +720,11 @@ const Testimonials: React.FC = React.memo(() => {
               }}
               aria-label={`Go to testimonial set ${i + 1}`}
               aria-current={i === startIdx ? "true" : undefined}
-              className={`rounded-full transition-all duration-300 ${i === startIdx
-                ? "w-6 h-2 bg-primary"
-                : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
-                }`}
+              className={`rounded-full transition-all duration-300 ${
+                i === startIdx
+                  ? "w-6 h-2 bg-primary"
+                  : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+              }`}
             />
           ))}
         </div>
@@ -846,9 +849,9 @@ const PastSponsors = React.memo(() => {
         <div className="mt-20 flex flex-col sm:flex-row justify-center items-center gap-6">
           <SafeLink
             href={`mailto:nairobi@devopssummit.africa?subject=${encodeURIComponent(
-              "Partnership Inquiry - Africa DevOps Summit"
+              "Partnership Inquiry - Africa DevOps Summit",
             )}&body=${encodeURIComponent(
-              "Hi Africa DevOps Summit Team,\n\nI am writing to express our interest in partnering with you for the upcoming summit. We would love to discuss the available sponsorship packages and how we can collaborate.\n\nLooking forward to hearing from you.\n\nBest regards,\n[Your Name / Company]"
+              "Hi Africa DevOps Summit Team,\n\nI am writing to express our interest in partnering with you for the upcoming summit. We would love to discuss the available sponsorship packages and how we can collaborate.\n\nLooking forward to hearing from you.\n\nBest regards,\n[Your Name / Company]",
             )}`}
             className="px-10 py-4 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-1 transition-all"
           >
@@ -888,9 +891,9 @@ const FinalCTA: React.FC = React.memo(() => (
         <div className="flex flex-wrap justify-center gap-6">
           <SafeLink
             href={`mailto:nairobi@devopssummit.africa?subject=${encodeURIComponent(
-              "Partnership Inquiry - Africa DevOps Summit"
+              "Partnership Inquiry - Africa DevOps Summit",
             )}&body=${encodeURIComponent(
-              "Hi Africa DevOps Summit Team,\n\nI am writing to express our interest in partnering with you for the upcoming summit. We would love to discuss the available sponsorship packages and how we can collaborate.\n\nLooking forward to hearing from you.\n\nBest regards,\n[Your Name / Company]"
+              "Hi Africa DevOps Summit Team,\n\nI am writing to express our interest in partnering with you for the upcoming summit. We would love to discuss the available sponsorship packages and how we can collaborate.\n\nLooking forward to hearing from you.\n\nBest regards,\n[Your Name / Company]",
             )}`}
             className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-white text-primary font-bold text-lg hover:shadow-2xl hover:-translate-y-1 transition-all"
           >

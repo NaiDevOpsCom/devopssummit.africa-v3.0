@@ -32,7 +32,8 @@ export const summitDetails = {
    * Expected format: e.g., "/deck.pdf" or full "https://..." URL.
    * This field can be empty/optional.
    */
-  sponsorshipDeckUrl: "https://drive.google.com/file/d/1zPtd9c1vFJs9KE4WbPcITq0Ea43PtSxK/view?usp=sharing",
+  sponsorshipDeckUrl:
+    "https://drive.google.com/file/d/1zPtd9c1vFJs9KE4WbPcITq0Ea43PtSxK/view?usp=sharing",
   /**
    * @property {string} sponsorshipCalendlyUrl
    * The Calendly link for booking sponsorship partnership calls.

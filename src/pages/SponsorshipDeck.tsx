@@ -10,11 +10,7 @@ import {
 } from "@/components/ui/dialog";
 
 const SponsorshipDeck: React.FC = () => {
-  // Convert the Google Drive "view" link to a "preview" link for embedding
-  const embedUrl = summitDetails.sponsorshipDeckUrl.replace(
-    /\/view.*$/,
-    "/preview"
-  );
+  const embedUrl = summitDetails.sponsorshipDeckUrl.replace(/\/view.*$/, "/preview");
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-24">
@@ -31,7 +27,7 @@ const SponsorshipDeck: React.FC = () => {
             Explore how we can partner together for the {summitDetails.name}.
           </p>
         </div>
-        
+
         <div className="w-full rounded-2xl overflow-hidden border border-border shadow-xl h-[70vh] md:h-[80vh]">
           <iframe
             src={embedUrl}
@@ -40,7 +36,7 @@ const SponsorshipDeck: React.FC = () => {
             title="Africa DevOps Summit Sponsorship Deck"
           />
         </div>
-        
+
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <a
             href={summitDetails.sponsorshipDeckUrl}
