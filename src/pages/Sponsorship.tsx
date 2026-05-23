@@ -29,12 +29,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { SponsorshipFormDialog } from "@/components/SponsorshipFormDialog";
 import {
   sponsors as sponsorsData,
   sponsorTestimonials,
   sponsorshipPackages,
 } from "@/data/sponsors";
-import { summitDetails } from "@/data/summitData";
+import { summitDetails, SPONSORSHIP_MAILTO_HREF } from "@/data/summitData";
 import { getInitials } from "@/utils/getInitials";
 import { cn } from "@/lib/utils";
 
@@ -424,31 +425,17 @@ const Packages: React.FC = React.memo(() => (
               ))}
             </ul>
 
-            <Dialog>
-              <DialogTrigger asChild>
-                <button
-                  className={`w-full py-4 rounded-2xl text-center font-bold text-sm transition-all shadow-sm ${
-                    pkg.highlight
-                      ? "bg-primary text-white hover:opacity-90 shadow-primary/20"
-                      : "border-2 border-primary/20 text-primary hover:bg-primary/5"
-                  }`}
-                >
-                  Select Tier
-                </button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl h-[90vh] p-0 flex flex-col overflow-hidden">
-                <DialogHeader className="p-4 border-b shrink-0">
-                  <DialogTitle className="font-heading">Sponsorship Form</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 w-full">
-                  <iframe
-                    src="https://form.typeform.com/to/AikBx6Vf"
-                    className="w-full h-full border-0"
-                    title="Sponsorship Application Form"
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
+            <SponsorshipFormDialog>
+              <button
+                className={`w-full py-4 rounded-2xl text-center font-bold text-sm transition-all shadow-sm ${
+                  pkg.highlight
+                    ? "bg-primary text-white hover:opacity-90 shadow-primary/20"
+                    : "border-2 border-primary/20 text-primary hover:bg-primary/5"
+                }`}
+              >
+                Select Tier
+              </button>
+            </SponsorshipFormDialog>
           </motion.div>
         ))}
       </motion.div>
@@ -848,11 +835,7 @@ const PastSponsors = React.memo(() => {
         {/* Bottom CTAs */}
         <div className="mt-20 flex flex-col sm:flex-row justify-center items-center gap-6">
           <SafeLink
-            href={`mailto:nairobi@devopssummit.africa?subject=${encodeURIComponent(
-              "Partnership Inquiry - Africa DevOps Summit",
-            )}&body=${encodeURIComponent(
-              "Hi Africa DevOps Summit Team,\n\nI am writing to express our interest in partnering with you for the upcoming summit. We would love to discuss the available sponsorship packages and how we can collaborate.\n\nLooking forward to hearing from you.\n\nBest regards,\n[Your Name / Company]",
-            )}`}
+            href={SPONSORSHIP_MAILTO_HREF}
             className="px-10 py-4 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-1 transition-all"
           >
             Become a Partner
@@ -890,11 +873,7 @@ const FinalCTA: React.FC = React.memo(() => (
         </p>
         <div className="flex flex-wrap justify-center gap-6">
           <SafeLink
-            href={`mailto:nairobi@devopssummit.africa?subject=${encodeURIComponent(
-              "Partnership Inquiry - Africa DevOps Summit",
-            )}&body=${encodeURIComponent(
-              "Hi Africa DevOps Summit Team,\n\nI am writing to express our interest in partnering with you for the upcoming summit. We would love to discuss the available sponsorship packages and how we can collaborate.\n\nLooking forward to hearing from you.\n\nBest regards,\n[Your Name / Company]",
-            )}`}
+            href={SPONSORSHIP_MAILTO_HREF}
             className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-white text-primary font-bold text-lg hover:shadow-2xl hover:-translate-y-1 transition-all"
           >
             Become a Sponsor Now

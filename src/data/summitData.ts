@@ -48,6 +48,17 @@ export const summitDetails = {
   attendees: "1000+ Expected",
 };
 
+/**
+ * Pre-filled mailto: href for partnership/sponsorship inquiries.
+ * Centralised here so that the subject/body template is maintained in one place
+ * and both Sponsorship.tsx sections reference the same string.
+ */
+export const SPONSORSHIP_MAILTO_HREF = `mailto:nairobi@devopssummit.africa?subject=${encodeURIComponent(
+  "Partnership Inquiry - Africa DevOps Summit",
+)}&body=${encodeURIComponent(
+  "Hi Africa DevOps Summit Team,\n\nI am writing to express our interest in partnering with you for the upcoming summit. We would love to discuss the available sponsorship packages and how we can collaborate.\n\nLooking forward to hearing from you.\n\nBest regards,\n[Your Name / Company]",
+)}`;
+
 export interface SummitHighlight {
   title: string;
   description: string;

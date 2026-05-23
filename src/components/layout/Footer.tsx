@@ -53,7 +53,7 @@ const Footer: React.FC = () => (
         {/* Column 1 — Brand & Contact */}
         <div className="space-y-6">
           <div>
-            <div className="flex items-left gap-2 mb-3">
+            <div className="flex items-start gap-2 mb-3">
               <img
                 src="https://res.cloudinary.com/nairobidevops/image/upload/v1779515398/White_logo_transparent_bg_gcnlag.png"
                 alt="Africa DevOps Summit Logo"

@@ -1,16 +1,11 @@
 import React from "react";
 import Seo from "@/components/SEO";
 import { summitDetails } from "@/data/summitData";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { SponsorshipFormDialog } from "@/components/SponsorshipFormDialog";
+import { getGoogleDriveEmbedUrl } from "@/utils/summitUtils";
 
 const SponsorshipDeck: React.FC = () => {
-  const embedUrl = summitDetails.sponsorshipDeckUrl.replace(/\/view.*$/, "/preview");
+  const embedUrl = getGoogleDriveEmbedUrl(summitDetails.sponsorshipDeckUrl);
 
   return (
     <div className="min-h-screen bg-background flex flex-col pt-24">
@@ -46,25 +41,11 @@ const SponsorshipDeck: React.FC = () => {
           >
             Download PDF directly
           </a>
-          <Dialog>
-            <DialogTrigger asChild>
-              <button className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl border-2 border-primary text-primary font-bold text-sm hover:bg-primary/5 hover:-translate-y-1 transition-all">
-                Fill Sponsor Form
-              </button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl h-[90vh] p-0 flex flex-col overflow-hidden">
-              <DialogHeader className="p-4 border-b shrink-0">
-                <DialogTitle className="font-heading">Sponsorship Form</DialogTitle>
-              </DialogHeader>
-              <div className="flex-1 w-full">
-                <iframe
-                  src="https://form.typeform.com/to/AikBx6Vf"
-                  className="w-full h-full border-0"
-                  title="Sponsorship Application Form"
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
+          <SponsorshipFormDialog>
+            <button className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl border-2 border-primary text-primary font-bold text-sm hover:bg-primary/5 hover:-translate-y-1 transition-all">
+              Fill Sponsor Form
+            </button>
+          </SponsorshipFormDialog>
         </div>
       </main>
     </div>
