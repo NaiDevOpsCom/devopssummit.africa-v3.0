@@ -389,15 +389,14 @@ const Packages: React.FC = React.memo(() => (
         whileInView="visible"
         viewport={{ once: true }}
         variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-        className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+        className="grid sm:grid-cols-2 lg:grid-cols-2 max-w-5xl mx-auto gap-8 mb-12"
       >
         {sponsorshipPackages.map((pkg) => (
           <motion.div
             key={pkg.name}
             variants={fadeUp}
-            className={`relative bg-white rounded-3xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${
-              pkg.highlight ? "lg:scale-105 z-10 border-4 border-white/20 shadow-xl" : ""
-            }`}
+            className={`relative bg-white rounded-3xl p-8 flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${pkg.highlight ? "lg:scale-105 z-10 border-4 border-white/20 shadow-xl" : ""
+              }`}
           >
             {pkg.highlight && (
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-primary text-white text-[10px] font-bold tracking-widest uppercase shadow-lg">
@@ -424,16 +423,30 @@ const Packages: React.FC = React.memo(() => (
               ))}
             </ul>
 
-            <SafeLink
-              href="mailto:sponsors@africadevopssummit.com"
-              className={`w-full py-4 rounded-2xl text-center font-bold text-sm transition-all shadow-sm ${
-                pkg.highlight
-                  ? "bg-primary text-white hover:opacity-90 shadow-primary/20"
-                  : "border-2 border-primary/20 text-primary hover:bg-primary/5"
-              }`}
-            >
-              Select Tier
-            </SafeLink>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  className={`w-full py-4 rounded-2xl text-center font-bold text-sm transition-all shadow-sm ${pkg.highlight
+                    ? "bg-primary text-white hover:opacity-90 shadow-primary/20"
+                    : "border-2 border-primary/20 text-primary hover:bg-primary/5"
+                    }`}
+                >
+                  Select Tier
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl h-[90vh] p-0 flex flex-col overflow-hidden">
+                <DialogHeader className="p-4 border-b shrink-0">
+                  <DialogTitle className="font-heading">Sponsorship Form</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 w-full">
+                  <iframe
+                    src="https://form.typeform.com/to/AikBx6Vf"
+                    className="w-full h-full border-0"
+                    title="Sponsorship Application Form"
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           </motion.div>
         ))}
       </motion.div>
@@ -452,7 +465,7 @@ const Packages: React.FC = React.memo(() => (
               Want a custom package?
             </h3>
             <p className="text-muted-foreground text-base md:text-lg max-w-md">
-              Schedule a 15-minute call with our partnership team to discuss your specific goals.
+              Schedule a 20-minute call with our partnership team to discuss your specific goals.
             </p>
           </div>
 
@@ -705,11 +718,10 @@ const Testimonials: React.FC = React.memo(() => {
               }}
               aria-label={`Go to testimonial set ${i + 1}`}
               aria-current={i === startIdx ? "true" : undefined}
-              className={`rounded-full transition-all duration-300 ${
-                i === startIdx
-                  ? "w-6 h-2 bg-primary"
-                  : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
-              }`}
+              className={`rounded-full transition-all duration-300 ${i === startIdx
+                ? "w-6 h-2 bg-primary"
+                : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                }`}
             />
           ))}
         </div>
@@ -833,7 +845,11 @@ const PastSponsors = React.memo(() => {
         {/* Bottom CTAs */}
         <div className="mt-20 flex flex-col sm:flex-row justify-center items-center gap-6">
           <SafeLink
-            href="mailto:sponsors@africadevopssummit.com"
+            href={`mailto:nairobi@devopssummit.africa?subject=${encodeURIComponent(
+              "Partnership Inquiry - Africa DevOps Summit"
+            )}&body=${encodeURIComponent(
+              "Hi Africa DevOps Summit Team,\n\nI am writing to express our interest in partnering with you for the upcoming summit. We would love to discuss the available sponsorship packages and how we can collaborate.\n\nLooking forward to hearing from you.\n\nBest regards,\n[Your Name / Company]"
+            )}`}
             className="px-10 py-4 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-1 transition-all"
           >
             Become a Partner
@@ -871,7 +887,11 @@ const FinalCTA: React.FC = React.memo(() => (
         </p>
         <div className="flex flex-wrap justify-center gap-6">
           <SafeLink
-            href="mailto:sponsors@africadevopssummit.com"
+            href={`mailto:nairobi@devopssummit.africa?subject=${encodeURIComponent(
+              "Partnership Inquiry - Africa DevOps Summit"
+            )}&body=${encodeURIComponent(
+              "Hi Africa DevOps Summit Team,\n\nI am writing to express our interest in partnering with you for the upcoming summit. We would love to discuss the available sponsorship packages and how we can collaborate.\n\nLooking forward to hearing from you.\n\nBest regards,\n[Your Name / Company]"
+            )}`}
             className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-white text-primary font-bold text-lg hover:shadow-2xl hover:-translate-y-1 transition-all"
           >
             Become a Sponsor Now

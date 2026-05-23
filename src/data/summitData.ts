@@ -32,12 +32,12 @@ export const summitDetails = {
    * Expected format: e.g., "/deck.pdf" or full "https://..." URL.
    * This field can be empty/optional.
    */
-  sponsorshipDeckUrl: "/deck.pdf",
+  sponsorshipDeckUrl: "https://drive.google.com/file/d/1zPtd9c1vFJs9KE4WbPcITq0Ea43PtSxK/view?usp=sharing",
   /**
    * @property {string} sponsorshipCalendlyUrl
    * The Calendly link for booking sponsorship partnership calls.
    */
-  sponsorshipCalendlyUrl: "https://calendly.com/africadevopssummit",
+  sponsorshipCalendlyUrl: "https://calendly.com/africadevopssummit/30min",
   /**
    * @property {string} cfpUrl
    * The public URL for call-for-papers submissions.
