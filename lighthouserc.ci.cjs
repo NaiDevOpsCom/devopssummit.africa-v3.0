@@ -3,7 +3,7 @@ module.exports = {
     collect: {
       startServerCommand: "npm run preview -- --port 8080 --host 127.0.0.1",
       startServerReadyPattern: "Local:",
-      startServerReadyTimeout: 30000,
+      startServerReadyTimeout: 60000,
       isSinglePageApplication: true,
       url: [
         "http://127.0.0.1:8080/",

@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import Seo from "@/components/SEO";
 import { motion } from "framer-motion";
 import { HelpCircle, Search } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import SectionHeader from "@/components/ui/SectionHeader";
 import {
   Accordion,
@@ -210,13 +208,11 @@ const FAQs: React.FC = () => (
       keywords="FAQ, frequently asked questions, DevOps conference, tickets, venue, Nairobi"
       canonicalUrl="/faqs"
     />
-    <Navbar />
     <main>
       <FAQHero />
       <FAQBody />
       <ContactCTA />
     </main>
-    <Footer />
   </>
 );
 

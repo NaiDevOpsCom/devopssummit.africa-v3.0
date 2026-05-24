@@ -22,8 +22,6 @@ import {
   Calendar,
   MapPin,
 } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -217,7 +215,7 @@ const SpeakerCardFull: React.FC<{ speaker: Speaker; compact?: boolean }> = ({
         <div className="flex gap-3 justify-center mt-3">
           {hasVideo && (
             <SafeLink
-              href={speaker.videoUrl as string}
+              href={speaker.videoUrl}
               className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
             >
               <Play className="w-3 h-3" /> Watch
@@ -225,7 +223,7 @@ const SpeakerCardFull: React.FC<{ speaker: Speaker; compact?: boolean }> = ({
           )}
           {hasSlides && (
             <SafeLink
-              href={speaker.slidesUrl as string}
+              href={speaker.slidesUrl}
               className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
             >
               <Presentation className="w-3 h-3" /> Slides
@@ -515,7 +513,7 @@ const SummitYearContent: React.FC<{ data: PastSummit }> = ({ data }) => {
                       <div className="flex gap-3">
                         {hasVideo && (
                           <SafeLink
-                            href={s.videoUrl as string}
+                            href={s.videoUrl}
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
                           >
                             <Play className="w-3.5 h-3.5" /> Watch
@@ -523,7 +521,7 @@ const SummitYearContent: React.FC<{ data: PastSummit }> = ({ data }) => {
                         )}
                         {hasSlides && (
                           <SafeLink
-                            href={s.slidesUrl as string}
+                            href={s.slidesUrl}
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
                           >
                             <Presentation className="w-3.5 h-3.5" /> Slides
@@ -833,17 +831,13 @@ const PastSummits: React.FC = () => {
 
   if (summitsArray.length === 0) {
     return (
-      <>
-        <Navbar />
-        <main className="min-h-screen flex items-center justify-center">
-          <SectionHeader
-            title="No Summits Found"
-            subtitle="Stay tuned for upcoming events."
-            pill="Archive"
-          />
-        </main>
-        <Footer />
-      </>
+      <main className="min-h-[70vh] flex flex-col items-center justify-center">
+        <SectionHeader
+          title="No Summits Found"
+          subtitle="Stay tuned for upcoming events."
+          pill="Archive"
+        />
+      </main>
     );
   }
 
@@ -855,7 +849,6 @@ const PastSummits: React.FC = () => {
         keywords="past summits, DevOps history, conference archive, Africa DevOps, speakers"
         canonicalUrl="/past-summits"
       />
-      <Navbar />
       <main>
         <PastSummitsHero />
 
@@ -908,7 +901,6 @@ const PastSummits: React.FC = () => {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   );
 };

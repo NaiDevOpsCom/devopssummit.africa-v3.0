@@ -37,25 +37,24 @@
     />
     <link
       rel="stylesheet"
-      media="print"
-      onload="
-        this.onload = null;
-        this.media = 'all';
-      "
       href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
     />
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
-      />
-    </noscript>
 
     <!-- Performance: Preload critical LCP assets -->
     <link
       rel="preload"
       as="image"
       href="https://ik.imagekit.io/nairobidevops/ads2025/IMG_6738.JPG?tr=w-1920,q-80,f-auto"
+    />
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://res.cloudinary.com/nairobidevops/image/upload/v1778759086/ads_favicon-01_juoi6r.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="https://res.cloudinary.com/nairobidevops/image/upload/v1778759086/ads_favicon-01_juoi6r.png"
     />
 
     <title>Africa DevOps Summit — Nairobi, Kenya | DevOps, Cloud & SRE Conference</title>
@@ -167,30 +166,6 @@
     <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Performance: Load non-critical GTM after main app is ready
-      window.addEventListener("load", function () {
-        if ("requestIdleCallback" in globalThis) {
-          requestIdleCallback(
-            function () {
-              var s = document.createElement("script");
-              s.src = "/scripts/gtm.js";
-              s.type = "module";
-              s.async = true;
-              document.body.appendChild(s);
-            },
-            { timeout: 3000 },
-          );
-        } else {
-          setTimeout(function () {
-            var s = document.createElement("script");
-            s.src = "/scripts/gtm.js";
-            s.type = "module";
-            s.async = true;
-            document.body.appendChild(s);
-          }, 2000);
-        }
-      });
-    </script>
+    <script type="module" src="/scripts/gtm-loader.js"></script>
   </body>
 </html>

@@ -185,6 +185,16 @@ async function main() {
   const gallery = loadExistingGallery(outPath);
   const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
   const isSecretMissing = isPlaceholder(privateKey);
+  const skipGalleryFetch = process.env.SKIP_GALLERY_FETCH === "true";
+
+  if (skipGalleryFetch) {
+    console.log(
+      "  [skip] SKIP_GALLERY_FETCH=true — preserving existing gallery data " +
+        "and skipping ImageKit fetch.",
+    );
+    saveGallery(gallery, outPath, outDir);
+    return;
+  }
 
   await processGalleryFolders(gallery, isSecretMissing);
   saveGallery(gallery, outPath, outDir);

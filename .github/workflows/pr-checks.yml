@@ -44,6 +44,7 @@ jobs:
             style
             security
             revert
+            release
           requireScope: false
           # Subject must NOT start with a capital letter
           subjectPattern: ^[a-z].+$
@@ -87,7 +88,7 @@ jobs:
 
           # ── Rule 3: No vague filler words ─────────────────────
           # These titles pass format checks but are useless in release notes
-          VAGUE_PATTERNS="^(feat|fix|chore|docs|refactor|perf|test|ci|content|style|security|revert)(\([^)]+\))?: (Fix|Update|Change|Edit|Modify|Tweak|Misc|Stuff|Things|WIP|wip|Test|Testing|Work|More|Some|Various|Minor|Major|Changes|Updates|Fixes|Improvements|Cleanup|Refactor)(\b.*)?$"
+          VAGUE_PATTERNS="^(feat|fix|chore|docs|refactor|perf|test|ci|content|style|security|revert|release)(\([^)]+\))?: (Fix|Update|Change|Edit|Modify|Tweak|Misc|Stuff|Things|WIP|wip|Test|Testing|Work|More|Some|Various|Minor|Major|Changes|Updates|Fixes|Improvements|Cleanup|Refactor)(\b.*)?$"
 
           if echo "$PR_TITLE" | grep -qiE "$VAGUE_PATTERNS"; then
             echo "❌ FAIL: PR title is too vague"

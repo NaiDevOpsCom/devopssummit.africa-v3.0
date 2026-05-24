@@ -1,0 +1,107 @@
+# .github/workflows/promote-release.yml
+# Staging-to-Main Release Promotion Automation
+#
+# Triggers:
+# 1. On every push to the `staging` branch (updates or opens the PR automatically)
+# 2. Manually via `workflow_dispatch`
+#
+# Action:
+# Uses our Node script to compile conventional logs since the last promotion,
+# formats a beautiful, lint-compliant PR title and description, and creates/updates
+# the PR from staging targeting main using GitHub CLI.
+
+name: 🚀 Release Promotion
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      chore_prefix:
+        description: "Use chore(release) prefix instead of release:"
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    name: 🚀 Auto-promote Staging to Main
+    runs-on: ubuntu-latest
+
+    # Avoid concurrent promotion runs on staging pushes
+    concurrency:
+      group: release-promotion-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # Full git history required for correct log generation
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate PR Title and Changelog
+        id: pr-generator
+        run: |
+          # Build arguments based on triggers
+          ARGS=""
+          if [ "${{ github.event.inputs.chore_prefix || 'false' }}" = "true" ]; then
+            ARGS="--chore"
+          fi
+
+          # Execute generation script
+          node scripts/generate-release-pr.mjs $ARGS
+
+          # Check if output files exist (if not, staging is in sync with main)
+          if [ -d ".release-temp" ] && [ -f ".release-temp/pr-title.txt" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "PR_TITLE=$(cat .release-temp/pr-title.txt)" >> $GITHUB_ENV
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No changes found. Staging and main are already in sync."
+          fi
+
+      # ── Create or Update Pull Request ─────────────────────────────
+      - name: Sync Promotion Pull Request
+        if: steps.pr-generator.outputs.has_changes == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 1. Search for an existing open PR from staging targeting main
+          EXISTING_PR=$(gh pr list --head staging --base main --state open --json number --jq '.[0].number')
+
+          TITLE_VAL=$(cat .release-temp/pr-title.txt)
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "🔄 Updating existing Release Promotion PR #$EXISTING_PR..."
+            gh pr edit "$EXISTING_PR" \
+              --title "$TITLE_VAL" \
+              --body-file .release-temp/pr-body.md
+            
+            echo "✅ Pull Request #$EXISTING_PR has been updated successfully!"
+            echo "🔗 View PR: ${{ github.server_url }}/${{ github.repository }}/pull/$EXISTING_PR"
+          else
+            echo "🆕 Creating new Release Promotion PR..."
+            NEW_PR=$(gh pr create \
+              --head staging \
+              --base main \
+              --title "$TITLE_VAL" \
+              --body-file .release-temp/pr-body.md \
+              --label "chore" \
+              --assignee "${{ github.actor }}")
+            
+            echo "✅ Created Release Promotion PR successfully!"
+            echo "🔗 View PR: $NEW_PR"
+          fi

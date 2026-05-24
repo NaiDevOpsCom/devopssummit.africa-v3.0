@@ -81,10 +81,10 @@ const Tickets: React.FC = () => (
         transition={{ duration: 0.5, delay: 0.2 }}
         className="bg-card rounded-xl border border-border p-8 md:p-12 text-center"
       >
-        <h3 className="text-2xl font-bold font-heading text-foreground mb-2">
+        <h3 className="text-2xl font-bold font-heading text-pure-white mb-2">
           Need custom group or corporate tickets?
         </h3>
-        <p className="text-muted-foreground mb-6">
+        <p className="text-pure-white mb-6">
           Contact our team for tailored packages and special rates.
         </p>
         <a

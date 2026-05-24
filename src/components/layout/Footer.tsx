@@ -28,7 +28,7 @@ const XIcon = ({ className }: { className?: string }) => (
 
 const quickLinks = [
   { label: "About Us", href: "/about" },
-  { label: "Schedule", href: "/schedule" },
+  // { label: "Schedule", href: "/schedule" },
   { label: "Past Summits", href: "/past-summits" },
   { label: "Partners", href: "/sponsorship" },
   { label: "FAQs", href: "/faqs" },
@@ -53,11 +53,13 @@ const Footer: React.FC = () => (
         {/* Column 1 — Brand & Contact */}
         <div className="space-y-6">
           <div>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-start gap-2 mb-3">
               <img
-                src="https://res.cloudinary.com/nairobidevops/image/upload/v1778755016/Updated_ADS_logo_grjrqu.png"
+                src="https://res.cloudinary.com/nairobidevops/image/upload/v1779515398/White_logo_transparent_bg_gcnlag.png"
                 alt="Africa DevOps Summit Logo"
-                className="h-10 md:h-12 w-auto object-contain"
+                width="196"
+                height="48"
+                className="h-10 w-[163px] md:h-12 md:w-[196px] object-contain"
               />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">

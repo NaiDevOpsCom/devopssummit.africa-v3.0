@@ -31,13 +31,13 @@ const Sponsors: React.FC = () => {
               {currentYearSponsors.map((s) => (
                 <div
                   key={s.id}
-                  className="w-[45%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] aspect-[3/2] bg-primary/50 rounded-lg flex items-center justify-center p-6 md:p-8 transition-all duration-300 hover:bg-[#A5E1FF] hover:shadow-lg group"
+                  className="w-[45%] sm:w-[30%] md:w-[22%] lg:w-[18%] min-w-[140px] aspect-[3/2] bg-pure-white border border-border/60 rounded-2xl flex items-center justify-center p-6 md:p-8 shadow-sm"
                 >
                   {s.logoUrl ? (
                     <img
                       src={s.logoUrl}
                       alt={s.name}
-                      className="max-h-full max-w-full object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                      className="max-h-full max-w-full object-contain"
                     />
                   ) : (
                     <div className="text-center">

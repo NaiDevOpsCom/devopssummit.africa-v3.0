@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SpeakerCard from "@/components/ui/SpeakerCard";
 import { speakers } from "@/data/speakers";
+import { summitDetails } from "@/data/summitData";
 
 const CURRENT_YEAR = 2026;
 
@@ -26,7 +27,7 @@ function ApplySpeakerButton({ variant = "primary" }: ApplySpeakerButtonProps) {
       className={`group px-10 py-4 rounded-full border-2 ${borderClass} bg-transparent text-white font-bold text-base hover:bg-white hover:text-primary transition-all`}
     >
       <a
-        href="https://talks.nairobidevops.org/"
+        href={summitDetails.cfpUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2"

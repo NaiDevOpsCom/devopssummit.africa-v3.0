@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { Link } from "react-router-dom";
-import SEO from "@/components/SEO";
-import { motion } from "framer-motion";
+import Seo from "@/components/SEO";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   CheckCircle,
   Lightbulb,
@@ -11,9 +11,7 @@ import {
   MapPin,
   Calendar,
 } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import { AnimatePresence, useReducedMotion } from "framer-motion";
+
 import { useDynamicBackground } from "@/hooks/useDynamicBackground";
 import { ADS2025_HERO_IMAGES, FALLBACK_IMAGE } from "@/data/heroImages";
 import { Button } from "@/components/ui/button";
@@ -784,13 +782,12 @@ WhyDevOps.displayName = "WhyDevOps";
 /* ------------------------------------------------------------------ */
 const AboutUs: React.FC = () => (
   <main>
-    <SEO
+    <Seo
       title="About Us"
       description="Learn about the Africa DevOps Summit — our mission, vision, core values, and the community driving DevOps adoption across the continent."
       keywords="Africa DevOps Summit, about, mission, vision, DevOps community, Nairobi"
       canonicalUrl="/about"
     />
-    <Navbar />
     <AboutHero />
     <AboutSummit />
     <StrategicDirection />
@@ -798,7 +795,6 @@ const AboutUs: React.FC = () => (
     <NairobiCommunity />
     <OurJourney />
     <WhyDevOps />
-    <Footer />
   </main>
 );
 

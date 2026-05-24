@@ -2,8 +2,6 @@ import React from "react";
 import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Shield, AlertTriangle, Heart, Users, MessageSquare, Ban, Phone, Mail } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import SectionHeader from "@/components/ui/SectionHeader";
 
 const fadeUp = {
@@ -290,7 +288,6 @@ const CodeOfConduct: React.FC = () => (
       keywords="code of conduct, event policy, inclusion, safety, Africa DevOps"
       canonicalUrl="/code-of-conduct"
     />
-    <Navbar />
     <main>
       <ConductHero />
       <Commitment />
@@ -299,7 +296,6 @@ const CodeOfConduct: React.FC = () => (
       <Enforcement />
       <Reporting />
     </main>
-    <Footer />
   </>
 );
 

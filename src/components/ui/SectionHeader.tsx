@@ -27,15 +27,26 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
     </div>
 
     {pill && (
-      <div className="relative flex items-center justify-center mb-6">
-        <div className="absolute inset-0 flex items-center justify-center h-full">
-          <div
-            className={`w-full max-w-[400px] h-[1px] ${light ? "bg-white/30" : "bg-primary/30"}`}
-          />
-        </div>
-        <span className="relative z-10 inline-block px-6 py-2 rounded-full bg-brand-cyan text-black text-sm font-bold uppercase tracking-wider">
+      <div className="flex items-center justify-center mb-6 relative">
+        <div
+          className={`h-[2px] flex-1 ${light ? "bg-white/30" : "bg-primary/30"} hidden sm:block`}
+        />
+
+        <span className="mx-4 sm:mx-6 z-10 inline-flex items-center px-4 sm:px-6 py-1.5 rounded-full bg-primary text-pure-white text-sm font-bold uppercase tracking-wider">
           {pill}
         </span>
+
+        <div
+          className={`h-[2px] flex-1 ${light ? "bg-white/30" : "bg-primary/30"} hidden sm:block`}
+        />
+
+        {/* Small-screen fallback: show shorter lines either side */}
+        <div
+          className={`w-full flex items-center justify-between sm:hidden absolute left-0 right-0`}
+        >
+          <div className={`h-[1px] w-1/4 ${light ? "bg-white/30" : "bg-primary/30"}`} />
+          <div className={`h-[1px] w-1/4 ${light ? "bg-white/30" : "bg-primary/30"}`} />
+        </div>
       </div>
     )}
 

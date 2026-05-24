@@ -1,11 +1,9 @@
 import React, { lazy, Suspense } from "react";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import Seo from "@/components/SEO";
-import Navbar from "@/components/layout/Navbar";
 import Hero from "@/components/landing/Hero";
 import About from "@/components/landing/About";
 import { Marquee } from "@/components/Marquee";
-import Footer from "@/components/layout/Footer";
 
 const ErrorFallback = ({ reset }: { reset: () => void }) => (
   <div className="py-20 text-center">
@@ -42,7 +40,6 @@ const Index = () => {
         canonicalUrl="/"
         ogType="event"
       />
-      <Navbar />
       <Hero />
       <About />
       <ErrorBoundary onReset={() => setResetCounter((prev) => prev + 1)} fallback={ErrorFallback}>
@@ -102,7 +99,6 @@ const Index = () => {
           </Suspense>
         </div>
       </ErrorBoundary>
-      <Footer />
     </main>
   );
 };

@@ -1,11 +1,8 @@
 import React from "react";
 
 const Loading: React.FC = () => (
-  <div
-    className="fixed inset-0 flex items-center justify-center bg-background z-[100]"
-    role="status"
-  >
-    <div className="flex flex-col items-center gap-4">
+  <output className="w-full flex-grow flex flex-col items-center justify-center bg-background min-h-[calc(100vh-5rem)]">
+    <div className="flex flex-col items-center gap-4 py-12">
       <div
         className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin"
         aria-hidden="true"
@@ -14,7 +11,7 @@ const Loading: React.FC = () => (
         Loading summit experience...
       </p>
     </div>
-  </div>
+  </output>
 );
 
 export default Loading;

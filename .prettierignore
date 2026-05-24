@@ -1,9 +1,11 @@
-node_modules
-dist
-build
+node_modules/
+dist/
+build/
 bun.lock
 bun.lockb
 package-lock.json
+pnpm-lock.yaml
+yarn.lock
 *.min.js
 *.min.css
 
@@ -15,6 +17,13 @@ dist/**/*.d.ts
 
 src/data/gallery.generated.json
 
+coverage/
+
 # Lighthouse CI
-.lighthouseci
+.lighthouseci/
 lighthouse-*.json
+
+# Environment and local files
+.env*
+*.log
+*.local

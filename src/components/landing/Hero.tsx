@@ -1,14 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
-
-const EVENT_DATE = new Date("2026-11-20T09:00:00").getTime();
+import { SafeLink } from "@/components/SafeLink";
+import { summitDetails } from "@/data/summitData";
 
 function useCountdown() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
+    const eventTimestamp = new Date(summitDetails.datetime).getTime();
     const tick = () => {
-      const diff = Math.max(EVENT_DATE - Date.now(), 0);
+      const diff = Math.max(eventTimestamp - Date.now(), 0);
       setTimeLeft({
         days: Math.floor(diff / 86400000),
         hours: Math.floor((diff % 86400000) / 3600000),
@@ -30,8 +31,12 @@ const ParticleCanvas: React.FC = React.memo(() => {
   useEffect(() => {
     if (shouldReduceMotion) return;
 
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d", { alpha: false }) || canvas.getContext("2d")!;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d", { alpha: false }) || canvas.getContext("2d");
+    if (!ctx) return;
+
     let animId: number;
     let particles: { x: number; y: number; vx: number; vy: number; r: number; o: number }[] = [];
 
@@ -196,16 +201,8 @@ const Hero: React.FC = () => {
             className="flex flex-wrap items-center gap-3 mb-6"
           >
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/20 text-primary text-sm font-medium border border-primary/30">
-              November 20–21, 2026. Nairobi, Kenya.
+              {summitDetails.date}. {summitDetails.location}.
             </span>
-            {/* <a
-              href="https://www.google.com/maps/place/Nairobi,+Kenya"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block px-4 py-1.5 rounded-full bg-primary/20 text-primary text-sm font-medium border border-primary/30 hover:bg-primary/30 transition-colors"
-            >
-              📍 Nairobi, Kenya
-            </a> */}
             <span className="text-sm font-medium text-primary/70 tracking-wide">#ADS2026</span>
             <span className="text-sm font-medium text-primary/70 tracking-wide">#ADSummit2026</span>
           </motion.div>
@@ -266,13 +263,15 @@ const Hero: React.FC = () => {
             >
               Become a Sponsor
             </Link>
-            <a
-              href="#"
+            <SafeLink
+              href={summitDetails.cfpUrl}
+              target="_blank"
+              rel="noreferrer noopener"
               className="px-7 py-3 rounded-full border-2 border-primary-foreground/40 text-primary-foreground font-semibold text-sm hover:bg-primary-foreground/10 transition-colors"
               aria-label="Become a Speaker"
             >
               Become a Speaker
-            </a>
+            </SafeLink>
           </motion.div>
         </div>
       </div>

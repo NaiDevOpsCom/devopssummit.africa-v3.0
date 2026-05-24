@@ -2,8 +2,6 @@ import React from "react";
 import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import { ShieldCheck, Eye, Database, Share2, Cookie, Clock, Mail, UserCheck } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import SectionHeader from "@/components/ui/SectionHeader";
 
 const fadeUp = {
@@ -218,13 +216,11 @@ const PrivacyPolicy: React.FC = () => (
       keywords="privacy policy, data protection, personal information, Africa DevOps"
       canonicalUrl="/privacy-policy"
     />
-    <Navbar />
     <main>
       <PolicyHero />
       <PolicySections />
       <ContactCTA />
     </main>
-    <Footer />
   </>
 );
 

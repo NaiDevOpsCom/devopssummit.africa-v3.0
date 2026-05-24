@@ -13,13 +13,19 @@ export default defineConfig([
   {
     ignores: [
       "dist",
+      "build",
       "storybook-static",
+      "coverage",
+      ".lighthouseci",
+      "lighthouse-*.json",
+      "node_modules",
       // shadcn/ui generated files — never manually edited, upstream template violations
       "src/components/ui/carousel.tsx",
       "src/components/ui/badge.tsx",
       "src/components/ui/button.tsx",
       "src/components/ui/form.tsx",
       "src/hooks/use-toast.ts",
+      "src/data/gallery.generated.json",
     ],
   },
   js.configs.recommended,

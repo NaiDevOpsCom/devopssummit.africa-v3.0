@@ -7,4 +7,4 @@
   j.async = true;
   j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
   f.parentNode.insertBefore(j, f);
-})(window, document, "script", "dataLayer", "GTM-P6L9KZDZ");
+})(globalThis, globalThis.document, "script", "dataLayer", "GTM-P6L9KZDZ");

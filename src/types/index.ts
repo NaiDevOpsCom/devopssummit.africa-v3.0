@@ -6,7 +6,7 @@ export interface Speaker {
   name: string;
   designation: string | null;
   company?: string | null;
-  imageUrl: HttpUrl | (string & {}) | null;
+  imageUrl: HttpUrl | null;
   eventRole?: string | null;
   topic?: string | null;
   videoUrl?: HttpUrl | null;

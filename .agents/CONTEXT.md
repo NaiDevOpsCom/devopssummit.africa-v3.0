@@ -251,12 +251,11 @@ Always test and implement at all three:
 
 ### Page component structure
 
-Every page must follow this exact pattern:
+Every page must follow this exact pattern (Navbar and Footer are managed globally in RootLayout):
 
 ```tsx
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import { motion } from "framer-motion";
+import SectionHeader from "@/components/ui/SectionHeader";
 
 // Animation variants — define at module level, not inside component
 const fadeUp = {
@@ -270,25 +269,21 @@ const stagger = {
 
 export default function MyPage() {
   return (
-    <>
-      <Navbar />
-      <main>
-        <section className="section-padding py-16">
-          <div className="container mx-auto">
-            <SectionHeader title="Section Title" subtitle="Supporting description here" />
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
-              {/* content */}
-            </motion.div>
-          </div>
-        </section>
-      </main>
-      <Footer />
-    </>
+    <main>
+      <section className="section-padding py-16">
+        <div className="container mx-auto">
+          <SectionHeader title="Section Title" subtitle="Supporting description here" />
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {/* content */}
+          </motion.div>
+        </div>
+      </section>
+    </main>
   );
 }
 ```
@@ -718,7 +713,7 @@ These are real, documented issues. Do NOT "fix" them unless the fix has been dis
 | --- | -------------------------------------------------------------------------------------------------------------- | --------- | ------ |
 | 1   | `Speaker` interface overloaded — current and past speakers share one type with incompatible field sets         | 🔴 High   | Open   |
 | 2   | `Speaker.imageUrl: HttpUrl \| string \| null` — `string` makes `HttpUrl` validation pointless                  | 🔴 High   | Open   |
-| 3   | `Sponsor` has no `websiteUrl` — logos can't link to sponsor websites                                           | 🔴 High   | Open   |
+| 3   | `Sponsor` has no `websiteUrl` — intentionally omitted as we only fetch logos                                   | 🟢 Low    | Closed |
 | 4   | `Session` type is entirely missing — schedule page has no typed data model                                     | 🔴 High   | Open   |
 | 5   | `Sponsor.id` resets to `1` each year — not globally unique                                                     | 🟡 Medium | Open   |
 | 6   | `PastSummit`, `SummitHighlight`, `GrowthMetric`, `FAQItem` defined locally — should be in `src/types/index.ts` | 🟡 Medium | Open   |

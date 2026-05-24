@@ -32,7 +32,7 @@ The Africa DevOps Summit website is a **client-side single-page application (SPA
 - **Static TypeScript data files** — for content that rarely changes (FAQs, ticket tiers, team, benefits)
 - **CMS-managed content** — for content that changes per edition (speakers, schedule, sponsors, past summit galleries)
 
-The application is deployed as a compiled static bundle to **cPanel shared hosting**. Client-side routing is handled by React Router, with an `.htaccess` rewrite rule redirecting all paths to `index.html`.
+The application is deployed as a compiled static bundle to **Cloudflare Pages**. Client-side routing is handled by React Router, with a `public/_redirects` rule that serves `index.html` for all paths so React Router can take over.
 
 ---
 
@@ -87,11 +87,11 @@ The application is deployed as a compiled static bundle to **cPanel shared hosti
    └────────┬─────────┘       └────────────────┘  └────────────┘
             │
             ▼
-   ┌──────────────────┐
-   │  cPanel Hosting   │
-   │  (public_html/)   │
-   │  .htaccess → SPA  │
-   └──────────────────┘
+   ┌────────────────────┐
+   │  Cloudflare Pages   │
+   │  (Git-connected CI) │
+   │  _redirects → SPA   │
+   └────────────────────┘
 ```
 
 ---
@@ -175,7 +175,7 @@ src/
 
 ## Routing Structure
 
-All routing is handled client-side by React Router DOM v6. The `.htaccess` on cPanel redirects all server paths to `index.html`, allowing React Router to take over.
+All routing is handled client-side by React Router DOM v6. The `public/_redirects` file (served by Cloudflare Pages) catches all server paths and serves `index.html`, allowing React Router to take over.
 
 | Route              | Page Component  | Description                |
 | ------------------ | --------------- | -------------------------- |
@@ -374,30 +374,50 @@ npm run preview     # Serves dist/ locally for verification
 
 The `dist/` directory contains the complete static site — one `index.html` and hashed JS/CSS bundles.
 
-### Deploying to cPanel
+### Deploying to Cloudflare Pages
 
-1. Run `npm run build` (locally or in CI)
-2. Upload the **contents** of `dist/` to `public_html/` on cPanel via FTP or the File Manager
-3. Ensure the following `.htaccess` is present at the root of `public_html/`:
+Deployment is Git-connected — pushing to the main branch triggers an automatic build and deploy on Cloudflare Pages.
 
-```apache
-Options -MultiViews
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ index.html [QSA,L]
+**First-time setup:**
+
+1. In the Cloudflare dashboard, create a new Pages project and connect it to this GitHub repository.
+2. Set the build configuration:
+   - **Build command:** `npm run build`
+   - **Build output directory:** `dist`
+   - **Node.js version:** match `.nvmrc`
+3. Add all required `VITE_` environment variables in the Cloudflare Pages dashboard under **Settings → Environment variables**.
+
+**SPA routing:**
+
+The `public/_redirects` file handles SPA fallback routing:
+
+```
+/*    /index.html    200
 ```
 
-This is required for SPA routing to work. Without it, direct URL access (e.g. navigating to `/about` directly) will return a 404 from the server.
+This is copied into `dist/` at build time by Vite and tells Cloudflare Pages to serve `index.html` for any path that doesn't match a real static asset — allowing React Router to handle navigation.
+
+**Preview deployments:**
+
+Cloudflare Pages automatically creates a unique preview URL for every pull request. Environment variables for preview builds can be configured separately under **Settings → Environment variables → Preview**.
 
 ### Environment variables at build time
 
-All `VITE_` environment variables are inlined into the bundle at build time. For production:
+All `VITE_` environment variables are inlined into the bundle at build time by Vite. Manage them in:
 
-1. Set the correct values in `.env.local` (or in your CI environment)
-2. Run `npm run build` with those values present
-3. The compiled `dist/` will contain the baked-in values
+- **Local development:** `.env.local` (never committed — see `.gitignore`)
+- **Production / Preview:** Cloudflare Pages dashboard → Settings → Environment variables
 
-> `TODO: Document CI/CD pipeline once automated deployment is set up (e.g. GitHub Actions → build → FTP to cPanel).`
+Cloudflare Pages also injects these read-only build variables automatically:
+
+| Variable              | Description                         |
+| --------------------- | ----------------------------------- |
+| `CF_PAGES`            | Set to `1` during a Pages build     |
+| `CF_PAGES_COMMIT_SHA` | Git commit SHA of the current build |
+| `CF_PAGES_BRANCH`     | Branch name being built             |
+| `CF_PAGES_URL`        | Deployment URL for this build       |
+
+If you need to expose the commit SHA to the browser, forward it with a `VITE_` prefix in the dashboard: `VITE_CF_PAGES_COMMIT_SHA`.
 
 ---
 
@@ -465,30 +485,31 @@ ADRs document _why_ key decisions were made, so future contributors don't unknow
 - First-load performance is slightly worse than SSG (no pre-rendered HTML)
 - SEO is marginally less optimal than SSR — acceptable for a conference site
 
-**Revisit when:** Traffic and SEO requirements grow significantly, or hosting moves to a platform that supports Node.js (e.g. Vercel, Railway).
+**Revisit when:** Traffic and SEO requirements grow significantly, or the project migrates to a platform with server-side rendering support (e.g. Cloudflare Workers + Pages Functions, Railway).
 
 ---
 
-### ADR-002: cPanel Shared Hosting
+### ADR-002: Cloudflare Pages Hosting
 
-**Decision:** Deploy to cPanel shared hosting, not a modern cloud platform (Vercel, Netlify, etc.).
+**Decision:** Deploy to **Cloudflare Pages** instead of cPanel shared hosting or other cloud platforms (Vercel, Netlify, etc.).
 
-**Context:** The project is community-run with limited budget. cPanel hosting is already available through the organising team.
+**Context:** The project is community-run. Cloudflare Pages offers a generous free tier with Git-connected CI/CD, global CDN edge caching, automatic preview deployments per PR, and built-in environment variable management — all without requiring a paid plan.
 
 **Reasons:**
 
-- Zero additional hosting cost
-- Sufficient for a static SPA with moderate traffic
-- No build preview environments, serverless functions, or edge network needed at this stage
+- Free tier is sufficient for a conference marketing site
+- Automatic Git-connected builds replace the previous manual FTP workflow
+- Global CDN edge network improves performance for African and international attendees
+- Per-PR preview deployments enable easier review of UI changes
+- Built-in environment variable management in the dashboard (no bake-at-build manual step for CI)
+- SPA routing handled via `public/_redirects` — simpler than `.htaccess` on cPanel
 
 **Trade-offs accepted:**
 
-- No automatic preview deployments per PR
-- No built-in environment variable management (vars must be baked in at build time)
-- FTP-based deployment is manual unless a CI/CD pipeline is set up
-- No CDN edge caching out of the box
+- Cloudflare Pages free tier has build minute limits (500 builds/month) — sufficient for current contribution volume
+- No Node.js server-side runtime (Workers would be needed) — not required for this SPA
 
-**Revisit when:** The project adds server-side features, or the team secures budget for cloud hosting.
+**Revisit when:** The project adds server-side features (e.g. API routes, SSR) that require a runtime beyond static file serving.
 
 ---
 

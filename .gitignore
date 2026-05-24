@@ -16,6 +16,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+coverage/
 src/data/gallery.generated.json
 *.local
 
@@ -32,3 +33,7 @@ src/data/gallery.generated.json
 
 storybook-static
 .lighthouseci/
+
+# Ephemeral release promotion build artifacts
+.release-temp/
+

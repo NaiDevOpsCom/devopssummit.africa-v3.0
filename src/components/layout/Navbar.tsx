@@ -88,7 +88,7 @@ const Navbar = memo(() => {
 
       sections.forEach((section) => {
         if (!observedElements.has(section)) {
-          observer!.observe(section);
+          observer.observe(section);
           observedElements.add(section);
         }
       });
@@ -170,9 +170,11 @@ const Navbar = memo(() => {
           aria-label="Africa DevOps Summit home"
         >
           <img
-            src="https://res.cloudinary.com/nairobidevops/image/upload/v1778755016/Updated_ADS_logo_grjrqu.png"
+            src="https://res.cloudinary.com/nairobidevops/image/upload/v1778759087/Updated_ADS_logo_jo105p.png"
             alt="Africa DevOps Summit Logo"
-            className="h-9 md:h-11 w-auto object-contain transition-transform duration-300 hover:scale-105 origin-left"
+            width="180"
+            height="44"
+            className="h-9 w-[147px] md:h-11 md:w-[180px] object-contain transition-transform duration-300 hover:scale-105 origin-left"
           />
         </a>
 
