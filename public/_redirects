@@ -1,1 +1,4 @@
-/* /index.html 200
+# Cloudflare Pages — SPA fallback routing
+# Redirect all paths to index.html so React Router handles client-side navigation.
+# Static assets (JS, CSS, images) are matched first by Cloudflare before this rule fires.
+/*    /index.html    200
