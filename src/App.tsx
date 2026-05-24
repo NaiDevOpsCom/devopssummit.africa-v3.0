@@ -13,6 +13,7 @@ const Index = lazy(() => import("./pages/Index"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
 const Schedule = lazy(() => import("./pages/Schedule"));
 const Sponsorship = lazy(() => import("./pages/Sponsorship"));
+const SponsorshipDeck = lazy(() => import("./pages/SponsorshipDeck"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CodeOfConduct = lazy(() => import("./pages/CodeOfConduct"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -48,6 +49,7 @@ const router = createBrowserRouter([
       { path: "about", element: <LazyRoute component={AboutUs} /> },
       { path: "schedule", element: <LazyRoute component={Schedule} /> },
       { path: "sponsorship", element: <LazyRoute component={Sponsorship} /> },
+      { path: "sponsorship-deck", element: <LazyRoute component={SponsorshipDeck} /> },
       { path: "code-of-conduct", element: <LazyRoute component={CodeOfConduct} /> },
       { path: "privacy-policy", element: <LazyRoute component={PrivacyPolicy} /> },
       { path: "faqs", element: <LazyRoute component={FAQs} /> },

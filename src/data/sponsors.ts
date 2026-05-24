@@ -11,6 +11,68 @@ import { type Sponsor, type SponsorTestimonial, type SponsorshipPackage } from "
  * 2. src/pages/Sponsorship.tsx - Iterates over this data to display the "Previous Sponsors" grid (logos only).
  * 3. src/pages/PastSummits.tsx - Dynamically fetches sponsors for each past summit year to display tier-colored pill badges.
  */
+
+export const sponsorshipPackages: SponsorshipPackage[] = [
+  {
+    name: "PLATINUM",
+    price: "$5000 USD",
+    benefits: [
+      "Prime exhibition table — front-of-house positioning, both days",
+      "15-minute keynote speaking slot on the main stage",
+      "6 complimentary tickets (Deploy Pass level)",
+      "Large logo on stage backdrop, welcome screens & all signage",
+      "Logo on all promotional materials (primary placement tier)",
+      "3 dedicated social media spotlight posts to our 6,000+ community",
+      "Dedicated newsletter spotlight article —5,000+ subscribers",
+      "Branded merch/swag distributed to all 700+ attendees",
+      "3 job listings featured on the event website",
+      "Branded session naming rights — e.g. 'The [Brand] DevOps Track'",
+    ],
+  },
+  {
+    name: "GOLD",
+    price: "$3000 USD",
+    highlight: true,
+    benefits: [
+      "Exhibition table dedicated space across both event days",
+      "10-minute speaking slot technical talk or product showcase",
+      "4 complimentary tickets (Deploy Pass level)",
+      "Logo on stage backdrop and all event signage",
+      "Logo on all promotional materials (Gold placement tier)",
+      "2 dedicated social media spotlight posts —6,000+ community",
+      "Featured mention in newsletter —5,000+ subscribers",
+      "Branded merch/swag distribution to all 700+ attendees",
+      "2 job listings featured on the event website",
+    ],
+  },
+  {
+    name: "SILVER",
+    price: "$1500 USD",
+    benefits: [
+      "Exhibition table —dedicated space across both event days",
+      "5-minute lightning talk slot on the main stage",
+      "2 complimentary tickets (Deploy Pass level)",
+      "Medium logo on stage backdrop and event signage",
+      "Logo on all promotional materials (Silver placement tier)",
+      "Logo inclusion in newsletter —5,000+ subscribers",
+      "Branded merch/swag distribution to all 700+ attendees",
+      "1 job listing featured on the event website",
+    ],
+  },
+  {
+    name: "Bronze",
+    price: "$750 USD",
+    benefits: [
+      "1 complimentary ticket (Deploy Pass level)",
+      "Small logo on stage backdrop and event signage",
+      "Logo on all promotional materials (Bronze placement tier)",
+      "Brand mention in opening and closing ceremony",
+      "Logo in the digital event programme",
+      "Mention in newsletter —5,000+ subscribers",
+    ],
+  },
+];
+
 export const sponsors: Record<number, Sponsor[]> = {
   // ... (sponsors data remains unchanged)
   2026: [
@@ -265,79 +327,5 @@ export const sponsorTestimonials: SponsorTestimonial[] = [
     role: "Cloud Architect",
     company: "MTN Group",
     verified: false,
-  },
-];
-
-export const sponsorshipPackages: SponsorshipPackage[] = [
-  {
-    name: "Community",
-    price: "$2,500",
-    benefits: [
-      "Logo on Website",
-      "2 Attendee Passes",
-      "Social Media Mention",
-      "Shared Digital Swag Bag",
-    ],
-  },
-  {
-    name: "Bronze",
-    price: "$3,500",
-    benefits: [
-      "Logo on Website",
-      "3 Attendee Passes",
-      "Social Media Mention",
-      "Digital Swag Inclusion",
-    ],
-  },
-  {
-    name: "Silver",
-    price: "$5,000",
-    benefits: [
-      "Standard Exhibition Booth",
-      "5 Attendee Passes",
-      "Branding on Event App",
-      "Newsletter Mention",
-      "Physical Swag Inclusion",
-    ],
-  },
-  {
-    name: "Gold",
-    price: "$10,000",
-    highlight: true,
-    benefits: [
-      "Large Exhibition Booth",
-      "10 Attendee Passes",
-      "Logo on Main Stage",
-      "5-min Lightning Talk",
-      "Talent Portal Access",
-      "1 Private Workshop Slot",
-    ],
-  },
-  {
-    name: "Platinum",
-    price: "$20,000",
-    benefits: [
-      "Premium 36sqm Booth",
-      "20 Attendee Passes",
-      "Keynote Speaking Slot",
-      "VIP Lounge Branding",
-      "Lead Retrieval Device",
-      "Dedicated PR Support",
-    ],
-  },
-  {
-    name: "Venue Partner",
-    price: "In-kind",
-    benefits: [
-      "On-site Branding",
-      "Event Access",
-      "Community Recognition",
-      "Strategic Partnership",
-    ],
-  },
-  {
-    name: "Refreshments Partner",
-    price: "In-kind",
-    benefits: ["Catering Branding", "Product Placement", "Community Recognition", "Event Access"],
   },
 ];
