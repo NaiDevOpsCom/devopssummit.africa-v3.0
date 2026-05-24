@@ -67,7 +67,8 @@ const dangerousPatterns = [
   { pattern: /^SK[a-f0-9]{32}$/, name: "Twilio API secret" },
 ];
 
-const safeVariables = new Set(["VITE_VERCEL_GIT_COMMIT_SHA", "VITE_GIT_COMMIT_SHA"]);
+// Cloudflare Pages build-time variables that are safe to expose via VITE_ prefix
+const safeVariables = new Set(["VITE_CF_PAGES_COMMIT_SHA", "VITE_GIT_COMMIT_SHA"]);
 
 const isPublicVariable = (key: string) => {
   const allowedPrefixes = [
