@@ -134,7 +134,7 @@ export const pastSummitsData: Record<number, PastSummit> = {
     location: "Nairobi, Kenya",
     attendees: "500+",
     countries: "9+",
-    reportUrl: "#", // TODO: Provide real report URL
+    reportUrl: "https://drive.google.com/file/d/1hd-zxIjahKwxSSv14FkbGwxKTMCt7MEC/view?usp=sharing", // TODO: Provide real report URL
     videoUrl: "#", // TODO: Provide real video URL
     highlights: [
       {
