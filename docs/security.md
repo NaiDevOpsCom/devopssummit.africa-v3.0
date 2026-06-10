@@ -90,7 +90,7 @@ The app runs a validation check at startup (`main.tsx`):
 
 #### Rules for contributors
 
-```
+```text
 # ✅ Safe — public configuration
 VITE_CMS_API_URL=https://api.example.com
 VITE_IMAGEKIT_PUBLIC_KEY=public_abc123
@@ -141,7 +141,9 @@ All external links must include `rel="noopener noreferrer"` to prevent reverse t
 </a>
 
 // ❌ Missing rel attribute — security risk
-<a href="https://external.com" target="_blank">Link</a>
+<a href="https://external.com" target="_blank">
+  Link
+</a>
 ```
 
 ---
@@ -159,7 +161,8 @@ Example runtime configuration:
 
 ```html
 <script>
-  window.GTM_SCRIPT_INTEGRITY = "sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC";
+  window.GTM_SCRIPT_INTEGRITY =
+    "sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC";
 </script>
 ```
 
@@ -188,7 +191,7 @@ For cPanel hosting, add the following to your `.htaccess` file and adjust the `c
 </IfModule>
 ```
 
-> `TODO: Confirm and finalise CSP directives once all third-party domains (CMS, ticketing, analytics) are confirmed. Test in report-only mode first using `Content-Security-Policy-Report-Only`  before enforcing.`
+> `TODO: Confirm and finalise CSP directives once all third-party domains (CMS, ticketing, analytics) are confirmed. Test in report-only mode first using Content-Security-Policy-Report-Only before enforcing.`
 
 ---
 

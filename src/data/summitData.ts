@@ -129,13 +129,13 @@ export const pastSummitsData: Record<number, PastSummit> = {
     theme: "DevOps for a Changing Continent: Taking DevOps beyond the pipeline",
     themeDescription:
       "The 2025 summit focused on DevOps for a Changing Continent: Taking DevOps beyond the pipeline, bringing together practitioners from 9 countries to share real-world strategies for enterprise-grade CI/CD, cloud-native architectures, and platform engineering.",
-    date: "November 7–8, 2025",
+    date: "November 7 – 8, 2025",
     venue: "Zetech University",
     location: "Nairobi, Kenya",
     attendees: "500+",
     countries: "9+",
-    reportUrl: "https://drive.google.com/file/d/1hd-zxIjahKwxSSv14FkbGwxKTMCt7MEC/view?usp=sharing", // TODO: Provide real report URL
-    videoUrl: "#", // TODO: Provide real video URL
+    reportUrl: "https://drive.google.com/file/d/1hd-zxIjahKwxSSv14FkbGwxKTMCt7MEC/view?usp=sharing",
+    videoUrl: "https://www.youtube.com/@nairobidevopscommunity",
     highlights: [
       {
         title: "Platform Engineering Track",
