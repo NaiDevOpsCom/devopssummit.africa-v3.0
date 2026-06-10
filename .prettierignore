@@ -23,6 +23,15 @@ coverage/
 .lighthouseci/
 lighthouse-*.json
 
+# Local tool metadata and generated caches
+.agents/
+.cursor/
+.jetro/
+.mcp.json
+.windsurfrules
+.github/copilot-instructions.md
+graphify-out/
+
 # Environment and local files
 .env*
 *.log

@@ -34,6 +34,7 @@ import SummitGallery from "@/components/SummitGallery";
 import { summitsArray, getSummitCounts } from "@/utils/summitUtils";
 import { SafeLink } from "@/components/SafeLink";
 import { buildCloudinarySrcSet, buildCloudinaryUrl } from "@/utils/cloudinary";
+import { useSearchParams } from "react-router-dom";
 
 const iconMap: Record<string, React.ReactNode> = {
   server: <Server className="w-6 h-6" />,
@@ -54,6 +55,20 @@ const tierColors: Record<string, string> = {
   "venue partner": "bg-indigo-600/20 text-indigo-700 dark:text-indigo-400",
   "refreshments partner": "bg-rose-600/20 text-rose-700 dark:text-rose-400",
   community: "bg-secondary/20 text-secondary-foreground",
+};
+
+const getReportEmbedUrl = (url: string) => {
+  const driveFileMatch = /\/file\/d\/([^/]+)(?:\/|$)/.exec(url);
+  if (driveFileMatch) {
+    return `https://drive.google.com/file/d/${driveFileMatch[1]}/preview`;
+  }
+
+  const driveOpenMatch = /[?&]id=([^&]+)/.exec(url);
+  if (driveOpenMatch) {
+    return `https://drive.google.com/file/d/${driveOpenMatch[1]}/preview`;
+  }
+
+  return url;
 };
 
 const PAST_SUMMITS_HERO_IMAGE =
@@ -316,13 +331,13 @@ const KeynotesSection: React.FC<{ keynotes: Speaker[] }> = ({ keynotes }) => {
         </AnimatePresence>
 
         <div className="flex justify-center gap-2 mt-8">
-          {Array.from({ length: totalPages }).map((_, i) => (
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
-              key={i}
-              aria-label={`Go to slide ${i + 1}`}
-              onClick={() => setCurrentIndex(i)}
+              key={`slide-${page}`}
+              aria-label={`Go to slide ${page}`}
+              onClick={() => setCurrentIndex(page - 1)}
               className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                i === currentIndex ? "bg-primary" : "bg-muted-foreground/30"
+                page - 1 === currentIndex ? "bg-primary" : "bg-muted-foreground/30"
               }`}
             />
           ))}
@@ -334,12 +349,19 @@ const KeynotesSection: React.FC<{ keynotes: Speaker[] }> = ({ keynotes }) => {
 
 /* ─── Summit Year Content ─── */
 const SummitYearContent: React.FC<{ data: PastSummit }> = ({ data }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reportParam = searchParams.get("report") === "1";
+
   const yearSpeakers = centralSpeakers[data.year] || [];
   const keynotes = yearSpeakers.filter((s) => s.isKeynote);
   const otherSpeakers = yearSpeakers.filter((s) => !s.isKeynote);
   const yearSponsors = allSponsors[data.year] || [];
 
+  const showReportViewer = reportParam;
+
   const { speakersCount, sessionsCount } = getSummitCounts(data.year);
+  const reportUrl = data.reportUrl && data.reportUrl !== "#" ? data.reportUrl : undefined;
+  const reportEmbedUrl = reportUrl ? getReportEmbedUrl(reportUrl) : undefined;
 
   return (
     <motion.div
@@ -388,15 +410,72 @@ const SummitYearContent: React.FC<{ data: PastSummit }> = ({ data }) => {
               </SafeLink>
             </Button>
           )}
-          {data.reportUrl && (
-            <Button asChild variant="outline" size="lg" className="rounded-full gap-2">
-              <SafeLink href={data.reportUrl}>
-                <FileText className="w-4 h-4" /> Download Event Report
+          {reportEmbedUrl && (
+            <>
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-full gap-2"
+                onClick={() => {
+                  setSearchParams((current) => {
+                    const params = new URLSearchParams(current);
+                    params.set("year", String(data.year));
+                    params.set("report", "1");
+                    return params;
+                  });
+                  document.querySelector("#report-viewer")?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                <FileText className="w-4 h-4" /> View Event Report
+              </Button>
+              <SafeLink
+                href={`/past-summits?year=${data.year}&report=1`}
+                className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+              >
+                <FileText className="w-4 h-4" /> Share Report Link
               </SafeLink>
-            </Button>
+            </>
           )}
         </div>
       </section>
+
+      {reportEmbedUrl && showReportViewer && (
+        <section id="report-viewer" className="space-y-6">
+          <SectionHeader
+            title="Event Report"
+            subtitle="Read the report inside the site without leaving the page."
+          />
+          <div className="bg-card/20 rounded-3xl border border-border overflow-hidden shadow-sm">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-3 p-4 border-b border-border bg-muted">
+              {/* <p className="text-sm text-muted-foreground">
+                The report is shown in an inline viewer so the site header and footer remain
+                visible.
+              </p> */}
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+                onClick={() => {
+                  setSearchParams((current) => {
+                    const params = new URLSearchParams(current);
+                    params.delete("report");
+                    params.set("year", String(data.year));
+                    return params;
+                  });
+                }}
+              >
+                Close report
+              </button>
+            </div>
+            <div className="w-full h-[72vh] md:h-[80vh]">
+              <iframe
+                src={reportEmbedUrl}
+                title={`${data.year} event report`}
+                className="w-full h-full border-0"
+              />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Highlights */}
       <section>
@@ -802,15 +881,17 @@ const GrowthSection: React.FC<{ onExplore?: (year: string) => void }> = ({ onExp
               role="tablist"
               aria-label="Carousel navigation"
             >
-              {Array.from({ length: totalPages }).map((_, i) => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
-                  key={i}
+                  key={`summit-slide-${page}`}
                   role="tab"
-                  aria-selected={i === carouselIndex}
-                  aria-label={`Go to slide ${i + 1}`}
-                  tabIndex={i === carouselIndex ? 0 : -1}
-                  onClick={() => setCarouselIndex(i)}
-                  className={`w-2.5 h-2.5 rounded-full transition-colors ${i === carouselIndex ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  aria-selected={page - 1 === carouselIndex}
+                  aria-label={`Go to slide ${page}`}
+                  tabIndex={page - 1 === carouselIndex ? 0 : -1}
+                  onClick={() => setCarouselIndex(page - 1)}
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                    page - 1 === carouselIndex ? "bg-primary" : "bg-muted-foreground/30"
+                  }`}
                 />
               ))}
             </div>
@@ -822,12 +903,37 @@ const GrowthSection: React.FC<{ onExplore?: (year: string) => void }> = ({ onExp
 };
 
 const PastSummits: React.FC = () => {
-  const [selectedYear, setSelectedYear] = useState<string>(String(summitsArray[0]?.year || ""));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const paramYear = searchParams.get("year");
+  const selectedYear =
+    paramYear && summitsArray.some((s) => String(s.year) === paramYear)
+      ? paramYear
+      : String(summitsArray[0]?.year || "");
 
-  const handleExploreClick = useCallback((year: string) => {
-    setSelectedYear(year);
-    document.querySelector("#summits")?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  const handleExploreClick = useCallback(
+    (year: string) => {
+      setSearchParams((current) => {
+        const params = new URLSearchParams(current);
+        params.set("year", year);
+        params.delete("report");
+        return params;
+      });
+      document.querySelector("#summits")?.scrollIntoView({ behavior: "smooth" });
+    },
+    [setSearchParams],
+  );
+
+  const handleTabChange = useCallback(
+    (year: string) => {
+      setSearchParams((current) => {
+        const params = new URLSearchParams(current);
+        params.set("year", year);
+        params.delete("report");
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
 
   if (summitsArray.length === 0) {
     return (
@@ -854,7 +960,7 @@ const PastSummits: React.FC = () => {
 
         <section id="summits" className="py-20">
           <div className="max-w-7xl mx-auto section-padding">
-            <Tabs value={selectedYear} onValueChange={setSelectedYear} className="w-full">
+            <Tabs value={selectedYear} onValueChange={handleTabChange} className="w-full">
               <div className="flex justify-center mb-4">
                 <TabsList className="bg-muted rounded-full p-1">
                   {summitsArray.map((s) => (

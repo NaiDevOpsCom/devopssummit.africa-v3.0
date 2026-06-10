@@ -8,10 +8,10 @@ const getScriptKey = (src: string, id?: string) => id ?? src;
  */
 export function loadScript(src: string, id?: string): Promise<void> {
   const key = getScriptKey(src, id);
-  const existingPromise = scriptLoadPromises.get(key);
-
-  if (existingPromise) {
-    return existingPromise;
+  // If we've already started loading this script, return the stored promise.
+  // Use Map.has to avoid using a Promise directly in a boolean conditional.
+  if (scriptLoadPromises.has(key)) {
+    return scriptLoadPromises.get(key)!;
   }
 
   const promise = new Promise<void>((resolve, reject) => {
