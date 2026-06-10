@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability in this project, **please do not open a public GitHub issue.**
 
-Report it privately by emailing: **`TODO: security@devopssummit.africa`**
+Report it privately by emailing: **`nairobi@devopssummit.africa`**
 
 Include as much detail as possible:
 
@@ -90,7 +90,7 @@ The app runs a validation check at startup (`main.tsx`):
 
 #### Rules for contributors
 
-```
+```text
 # ✅ Safe — public configuration
 VITE_CMS_API_URL=https://api.example.com
 VITE_IMAGEKIT_PUBLIC_KEY=public_abc123
@@ -141,12 +141,34 @@ All external links must include `rel="noopener noreferrer"` to prevent reverse t
 </a>
 
 // ❌ Missing rel attribute — security risk
-<a href="https://external.com" target="_blank">Link</a>
+<a href="https://external.com" target="_blank">
+  Link
+</a>
 ```
 
 ---
 
-### 4. Content Security Policy (CSP)
+### 4. Third-Party Script Integrity
+
+External analytics and marketing scripts are a significant attack surface. When a remote script is loaded from a third-party CDN, the safest practice is to pin the exact file with Subresource Integrity (SRI) and use `crossorigin="anonymous"`.
+
+- The GTM loader file in `public/scripts/gtm.js` is intentionally implemented to support this pattern.
+- If you can obtain a verified SRI hash for the Google Tag Manager script, set it at runtime using `window.GTM_SCRIPT_INTEGRITY` before the loader runs.
+- If no hash is available, make sure the script source is trusted, use a strict CSP `script-src` policy, and prefer a versioned vendor URL.
+- This file is excluded from Sonar scanning in `sonar-project.properties` because it is managed as a runtime loader for a trusted third-party analytics provider.
+
+Example runtime configuration:
+
+```html
+<script>
+  window.GTM_SCRIPT_INTEGRITY =
+    "sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC";
+</script>
+```
+
+Then the loader in `public/scripts/gtm.js` will insert the GTM script with both `integrity` and `crossorigin="anonymous"`.
+
+### 5. Content Security Policy (CSP)
 
 A Content Security Policy restricts which resources the browser can load, significantly reducing XSS impact.
 
@@ -169,7 +191,7 @@ For cPanel hosting, add the following to your `.htaccess` file and adjust the `c
 </IfModule>
 ```
 
-> `TODO: Confirm and finalise CSP directives once all third-party domains (CMS, ticketing, analytics) are confirmed. Test in report-only mode first using `Content-Security-Policy-Report-Only`  before enforcing.`
+> `TODO: Confirm and finalise CSP directives once all third-party domains (CMS, ticketing, analytics) are confirmed. Test in report-only mode first using Content-Security-Policy-Report-Only before enforcing.`
 
 ---
 
