@@ -39,18 +39,28 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0 # Full git history required for correct log generation
 
       - name: Setup Node.js
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Fetch Git tags
+        run: git fetch --tags --quiet
+
+      - name: Check current production tag
+        id: current-tag
+        run: |
+          LATEST_TAG=$(git describe --tags --match "v[0-9]*" --abbrev=0 origin/main 2>/dev/null || git describe --tags --match "v[0-9]*" --abbrev=0 main 2>/dev/null || echo "none")
+          echo "CURRENT_PROJECT_TAG=$LATEST_TAG" >> $GITHUB_ENV
+          echo "current_project_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Generate PR Title and Changelog
         id: pr-generator

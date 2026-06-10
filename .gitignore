@@ -37,3 +37,12 @@ storybook-static
 # Ephemeral release promotion build artifacts
 .release-temp/
 
+# Local tool metadata and generated caches
+.agents/
+.cursor/
+.jetro/
+.mcp.json
+.windsurfrules
+.github/copilot-instructions.md
+graphify-out/
+

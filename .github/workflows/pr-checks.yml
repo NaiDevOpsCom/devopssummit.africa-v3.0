@@ -56,11 +56,16 @@ jobs:
       - name: Validate PR title quality
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_ACTOR: ${{ github.actor }}
         run: |
           echo "Checking PR title: \"$PR_TITLE\""
           echo ""
 
           FAILED=0
+          IS_DEPENDABOT=0
+          if [ "$GITHUB_ACTOR" = "dependabot[bot]" ] || [ "$GITHUB_ACTOR" = "dependabot-preview[bot]" ]; then
+            IS_DEPENDABOT=1
+          fi
 
           # ── Rule 1: Minimum length ─────────────────────────────
           # Strips the type prefix (e.g. "feat: ") and checks the subject
@@ -79,9 +84,13 @@ jobs:
           # ── Rule 2: Maximum length ─────────────────────────────
           TITLE_LEN=${#PR_TITLE}
           if [ "$TITLE_LEN" -gt 100 ]; then
-            echo "❌ FAIL: PR title is too long (${TITLE_LEN} chars, maximum 100)"
-            echo "   Keep it concise — move detail to the PR description."
-            FAILED=1
+            if [ "$IS_DEPENDABOT" -eq 1 ]; then
+              echo "⚠️  Dependabot PR title is too long (${TITLE_LEN} chars, maximum 100), but this is only a warning for bot-generated dependency updates."
+            else
+              echo "❌ FAIL: PR title is too long (${TITLE_LEN} chars, maximum 100)"
+              echo "   Keep it concise — move detail to the PR description."
+              FAILED=1
+            fi
           else
             echo "✅ Max length: ${TITLE_LEN} chars — OK"
           fi
