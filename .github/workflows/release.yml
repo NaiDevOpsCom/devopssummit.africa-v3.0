@@ -19,6 +19,19 @@ jobs:
     name: 📝 Update Release Draft
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch Git tags and resolve latest production tag
+        id: resolve-tag
+        run: |
+          git fetch --tags --quiet
+          CURRENT_TAG=$(git describe --tags --match "v[0-9]*" --abbrev=0 origin/main 2>/dev/null || git describe --tags --match "v[0-9]*" --abbrev=0 main 2>/dev/null || echo "none")
+          echo "current_project_tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
+          echo "Current production tag: $CURRENT_TAG"
+
       - uses: release-drafter/release-drafter@7cf306f56b79636bb76931494ccf29fc893763bd # v6.1.0
         with:
           config-name: release-drafter.yml
