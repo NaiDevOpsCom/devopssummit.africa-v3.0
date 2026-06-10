@@ -144,11 +144,10 @@ const SponsorHero: React.FC = React.memo(() => (
               Become a Sponsor <ArrowRight className="w-4 h-4" />
             </a>
             <SafeLink
-              href={summitDetails.sponsorshipDeckUrl}
-              target="_blank"
+              href="/sponsorship-deck"
               className="inline-flex items-center gap-2 px-7 py-3 rounded-full border-2 border-primary-foreground/30 text-primary-foreground font-semibold text-sm hover:bg-primary-foreground/10 transition-colors"
             >
-              <Download className="w-4 h-4" /> Download Sponsor Deck
+              <Download className="w-4 h-4" /> View Sponsor Deck
             </SafeLink>
           </motion.div>
         </div>
@@ -415,8 +414,8 @@ const Packages: React.FC = React.memo(() => (
             </div>
 
             <ul className="space-y-4 flex-1 mb-8">
-              {pkg.benefits.map((b, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-foreground/80">
+              {pkg.benefits.map((b) => (
+                <li key={b} className="flex items-start gap-3 text-sm text-foreground/80">
                   <Check
                     className={`w-5 h-5 mt-0.5 flex-shrink-0 ${pkg.highlight ? "text-primary" : "text-foreground/60"}`}
                   />
@@ -666,7 +665,7 @@ const Testimonials: React.FC = React.memo(() => {
 
           {/* ── 4 smaller grid cards ── */}
           {gridCards.map((t, i) => (
-            <AnimatePresence key={i} mode="wait">
+            <AnimatePresence key={t.id} mode="wait">
               <motion.div
                 key={t.id}
                 initial={{ opacity: 0, y: 14 }}
@@ -698,9 +697,9 @@ const Testimonials: React.FC = React.memo(() => {
 
         {/* Dot pagination */}
         <div className="flex justify-center items-center gap-2 mt-10">
-          {Array.from({ length: total }, (_, i) => (
+          {verifiedTestimonials.map((testimonial, i) => (
             <button
-              key={i}
+              key={testimonial.id}
               onClick={() => {
                 setStartIdx(i);
                 setIsPaused(true);
@@ -879,11 +878,10 @@ const FinalCTA: React.FC = React.memo(() => (
             Become a Sponsor Now
           </SafeLink>
           <SafeLink
-            href={summitDetails.sponsorshipDeckUrl}
-            target="_blank"
+            href="/sponsorship-deck"
             className="inline-flex items-center gap-2 px-10 py-4 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition-all"
           >
-            <Download className="w-5 h-5" /> Download Deck
+            <Download className="w-5 h-5" /> View Deck
           </SafeLink>
         </div>
       </motion.div>
