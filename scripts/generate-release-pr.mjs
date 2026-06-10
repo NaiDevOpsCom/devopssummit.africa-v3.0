@@ -93,7 +93,7 @@ function resolveLatestTag(ref) {
     return candidate;
   }
 
-  const allTags = runCmd(`${GIT_PATH} tag --list "v[0-9]*" --sort=-v:refname`);
+  const allTags = runCmd(`${GIT_PATH} tag --list "v[0-9]*" --merged ${ref} --sort=-v:refname`);
   if (!allTags) {
     return "";
   }
