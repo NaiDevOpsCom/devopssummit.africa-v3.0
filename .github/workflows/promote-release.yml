@@ -52,6 +52,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Fetch Git tags
+        run: git fetch --tags --quiet
+
+      - name: Check current production tag
+        id: current-tag
+        run: |
+          LATEST_TAG=$(git describe --tags --match "v[0-9]*" --abbrev=0 origin/main 2>/dev/null || git describe --tags --match "v[0-9]*" --abbrev=0 main 2>/dev/null || echo "none")
+          echo "CURRENT_PROJECT_TAG=$LATEST_TAG" >> $GITHUB_ENV
+          echo "current_project_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
       - name: Generate PR Title and Changelog
         id: pr-generator
         run: |

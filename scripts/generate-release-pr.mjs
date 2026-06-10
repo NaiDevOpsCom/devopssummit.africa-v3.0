@@ -87,6 +87,20 @@ function runCmd(cmd) {
   }
 }
 
+function resolveLatestTag(ref) {
+  const candidate = runCmd(`${GIT_PATH} describe --tags --match "v[0-9]*" --abbrev=0 ${ref}`);
+  if (candidate) {
+    return candidate;
+  }
+
+  const allTags = runCmd(`${GIT_PATH} tag --list "v[0-9]*" --merged ${ref} --sort=-v:refname`);
+  if (!allTags) {
+    return "";
+  }
+
+  return allTags.split("\n")[0].trim();
+}
+
 // 1. Determine git references
 // Try using remote references first (CI style), fallback to local references if unavailable.
 let baseRef = "origin/main";
@@ -104,20 +118,22 @@ console.log(`🔍 Comparing branches: ${baseRef} (base) <--- ${headRef} (head)`)
 
 // Ensure references are fetched and up-to-date
 if (!dryRun) {
-  console.log("🔄 Fetching latest branches from origin...");
+  console.log("🔄 Fetching latest branches and tags from origin...");
   try {
-    execSync(`${GIT_PATH} fetch origin main staging --quiet`, {
+    execSync(`${GIT_PATH} fetch --tags origin main staging --quiet`, {
       stdio: ["ignore", "pipe", "pipe"],
       env: getSafeEnv(),
     });
   } catch (error) {
     console.error(
-      "❌ Failed to fetch latest branches from origin. Please check your internet connection or git remote settings.",
+      "❌ Failed to fetch latest branches and tags from origin. Please check your internet connection or git remote settings.",
     );
     console.error(error.stderr?.toString() || error.message);
     process.exit(1);
   }
 }
+
+const currentTag = resolveLatestTag(baseRef) || resolveLatestTag("main") || "none";
 
 // Check if there are any commits difference
 const commitCount = Number.parseInt(
@@ -371,6 +387,14 @@ for (const cat of Object.values(categories)) {
 
 if (!hasChanges) {
   prBody += "*No categorized changes found. Manual merge details may apply.*\n\n";
+}
+
+// Add release tag section
+prBody += `### 🏷️ Current Production Tag\n\n`;
+if (currentTag === "none") {
+  prBody += `- No production tag was found on ${baseRef}. Release Drafter will compute the next version after merge.\n\n`;
+} else {
+  prBody += `- **Latest production tag:** ${currentTag}\n\n`;
 }
 
 // Add contributors section
