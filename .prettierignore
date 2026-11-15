@@ -30,7 +30,13 @@ lighthouse-*.json
 .mcp.json
 .windsurfrules
 .github/copilot-instructions.md
+
+# Graphify — generated output and installed agent config
 graphify-out/
+.graphify_*.json
+.graphify_*.txt
+.opencode/
+AGENTS.md
 
 # Environment and local files
 .env*
