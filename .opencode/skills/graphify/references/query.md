@@ -7,7 +7,7 @@ Two traversal modes - choose based on the question:
 | Mode | Flag | Best for |
 |------|------|----------|
 | BFS (default) | _(none)_ | "What is X connected to?" - broad context, nearest neighbors first |
-| DFS | `--dfs` | "How does X reach Y?" - trace a specific chain or dependency path |
+| DFS | `--dfs` | "What does X depend on?" - depth-limited (≤6 hop) branch exploration; not a guaranteed path to a specific target |
 
 First check the graph exists:
 ```bash
@@ -90,15 +90,22 @@ question = 'QUESTION'
 mode = 'MODE'  # 'bfs' or 'dfs'
 terms = [t.lower() for t in question.split() if len(t) >= 3]  # match the vocab threshold; keeps api/jwt/ios (#1392)
 
-# Find best-matching start nodes
-scored = []
-for nid, ndata in G.nodes(data=True):
-    label = ndata.get('label', '').lower()
-    score = sum(1 for t in terms if t in label)
-    if score > 0:
-        scored.append((score, nid))
-scored.sort(reverse=True)
-start_nodes = [nid for _, nid in scored[:3]]
+# Find best-matching start nodes. Tie-break deterministically instead of by node
+# id (#193): exact label match first, then the shortest label (a short label is
+# usually the specific concept, a long one a container), then the most-connected.
+def _rank(nid):
+    label = G.nodes[nid].get('label', '') or ''
+    lab = label.lower()
+    score = sum(1 for t in terms if t in lab)
+    exact = 1 if lab and any(t == lab for t in terms) else 0
+    return (exact, score, -len(label), G.degree(nid), nid)
+
+scored = [
+    nid for nid in G.nodes()
+    if sum(1 for t in terms if t in (G.nodes[nid].get('label', '') or '').lower()) > 0
+]
+scored.sort(key=_rank, reverse=True)
+start_nodes = scored[:3]
 
 if not start_nodes:
     print('No matching nodes found for query terms:', terms)
@@ -108,8 +115,10 @@ subgraph_nodes = set()
 subgraph_edges = []
 
 if mode == 'dfs':
-    # DFS: follow one path as deep as possible before backtracking.
-    # Depth-limited to 6 to avoid traversing the whole graph.
+    # Depth-limited branch exploration (≤6 hops) in stack order. This is NOT a
+    # target-aware or shortest path: it follows every reachable branch, so it can
+    # pull in nodes unrelated to a specific target. For a real path between two
+    # named nodes use `graphify path` (see the /graphify path section below).
     visited = set()
     stack = [(n, 0) for n in reversed(start_nodes)]
     while stack:
@@ -167,11 +176,17 @@ Replace `QUESTION` with the **expanded** query string, `MODE` with `bfs` or `dfs
 
 After writing the answer, save it back into the graph so it improves future queries. Include the expanded tokens inside the `--answer` text (e.g. `"Expanded from original query via vocab: [tokens]. Then traversed..."`) so the next `--update` extracts the expansion history as a graph node:
 
+Write the question, answer, and cited labels to files with your editor first, then pass them through `$(cat …)` so punctuation in the text — quotes, backticks, `$(…)`, newlines — is never parsed by the shell (#193):
+
 ```bash
-$(cat graphify-out/.graphify_python) -m graphify save-result --question "ORIGINAL_QUESTION" --answer "ANSWER" --type query --nodes NODE1 NODE2
+$(cat graphify-out/.graphify_python) -m graphify save-result \
+  --question "$(cat graphify-out/.graphify_q.txt)" \
+  --answer "$(cat graphify-out/.graphify_answer.txt)" \
+  --type query \
+  --nodes $(cat graphify-out/.graphify_nodes.txt)
 ```
 
-Replace `ORIGINAL_QUESTION` with the user's verbatim question, `ANSWER` with your full answer text (containing the expanded-token trace), `NODE1 NODE2` with the list of node labels you cited. This closes the feedback loop: the next `--update` will extract this Q&A as a node in the graph.
+Write the user's verbatim question to `.graphify_q.txt`, your full answer (including the expanded-token trace) to `.graphify_answer.txt`, and the cited node labels (space- or newline-separated) to `.graphify_nodes.txt`. Never inline the value text into the command — an answer containing `$(...)` or backticks would be executed. This closes the feedback loop: the next `--update` will extract this Q&A as a node in the graph.
 
 **Work memory (self-improving loop).** Add an `--outcome` so future sessions learn from this one — append `--outcome useful|dead_end|corrected` to the `save-result` command (and `--correction "the right answer"` when correcting):
 
@@ -208,12 +223,21 @@ b_term = 'NODE_B'
 
 def find_node(term):
     term = term.lower()
-    scored = sorted(
-        [(sum(1 for w in term.split() if w in G.nodes[n].get('label','').lower()), n)
-         for n in G.nodes()],
-        reverse=True
-    )
-    return scored[0][1] if scored and scored[0][0] > 0 else None
+    words = term.split()
+
+    def _rank(n):
+        label = G.nodes[n].get('label', '') or ''
+        lab = label.lower()
+        score = sum(1 for w in words if w in lab)
+        exact = 1 if lab == term else 0
+        # exact label, then more matched words, then shortest label, then degree
+        # (a stable, meaningful tie-break instead of by node id; #193)
+        return (exact, score, -len(label), G.degree(n), n)
+
+    ranked = sorted(G.nodes(), key=_rank, reverse=True)
+    if not ranked or _rank(ranked[0])[1] == 0:
+        return None
+    return ranked[0]
 
 src = find_node(a_term)
 tgt = find_node(b_term)
@@ -246,8 +270,14 @@ Replace `NODE_A` and `NODE_B` with the actual concept names from the user. Then 
 After writing the explanation, save it back:
 
 ```bash
-$(cat graphify-out/.graphify_python) -m graphify save-result --question "Path from NODE_A to NODE_B" --answer "ANSWER" --type path_query --nodes NODE_A NODE_B
+$(cat graphify-out/.graphify_python) -m graphify save-result \
+  --question "Path from $(cat graphify-out/.graphify_a.txt) to $(cat graphify-out/.graphify_b.txt)" \
+  --answer "$(cat graphify-out/.graphify_answer.txt)" \
+  --type path_query \
+  --nodes $(cat graphify-out/.graphify_nodes.txt)
 ```
+
+Write `NODE_A`/`NODE_B` to `.graphify_a.txt`/`.graphify_b.txt` and the explanation to `.graphify_answer.txt` first, so arbitrary concept text is never parsed by the shell (#193).
 
 ---
 
@@ -274,20 +304,27 @@ G = json_graph.node_link_graph(data, edges='links')
 term = 'NODE_NAME'
 term_lower = term.lower()
 
-# Find best matching node
-scored = sorted(
-    [(sum(1 for w in term_lower.split() if w in G.nodes[n].get('label','').lower()), n)
-     for n in G.nodes()],
-    reverse=True
-)
-if not scored or scored[0][0] == 0:
+# Find best matching node, deterministic tie-break (#193): exact label first,
+# then more matched words, then shortest label, then highest degree.
+_words = term_lower.split()
+
+def _rank(n):
+    label = G.nodes[n].get('label', '') or ''
+    lab = label.lower()
+    score = sum(1 for w in _words if w in lab)
+    exact = 1 if lab == term_lower else 0
+    return (exact, score, -len(label), G.degree(n), n)
+
+_ranked = sorted(G.nodes(), key=_rank, reverse=True)
+if not _ranked or _rank(_ranked[0])[1] == 0:
     print(f'No node matching {term!r}')
     sys.exit(0)
 
-nid = scored[0][1]
+nid = _ranked[0]
 data_n = G.nodes[nid]
+_loc = data_n.get('source_location', '')
 print(f'NODE: {data_n.get(\"label\", nid)}')
-print(f'  source: {data_n.get(\"source_file\",\"unknown\")}')
+print(f'  source: {data_n.get(\"source_file\",\"unknown\")}{\":\" + str(_loc) if _loc else \"\"}')
 print(f'  type: {data_n.get(\"file_type\",\"unknown\")}')
 print(f'  degree: {G.degree(nid)}')
 print()
@@ -298,14 +335,19 @@ for neighbor in G.neighbors(nid):
     rel = edge.get('relation', '')
     conf = edge.get('confidence', '')
     src_file = G.nodes[neighbor].get('source_file', '')
-    print(f'  --{rel}--> {nlabel} [{conf}] ({src_file})')
+    src_loc = G.nodes[neighbor].get('source_location', '')
+    print(f'  --{rel}--> {nlabel} [{conf}] ({src_file}{\":\" + str(src_loc) if src_loc else \"\"})')
 "
 ```
 
-Replace `NODE_NAME` with the concept the user asked about. Then write a 3-5 sentence explanation of what this node is, what it connects to, and why those connections are significant. Use the source locations as citations.
+Replace `NODE_NAME` with the concept the user asked about. Then write a 3-5 sentence explanation of what this node is, what it connects to, and why those connections are significant. Cite the `source_file` **and** `source_location` printed for each node — a file alone is not a citation.
 
-After writing the explanation, save it back:
+After writing the explanation, save it back. Write the concept and explanation to files first so free text is never parsed by the shell (#193):
 
 ```bash
-$(cat graphify-out/.graphify_python) -m graphify save-result --question "Explain NODE_NAME" --answer "ANSWER" --type explain --nodes NODE_NAME
+$(cat graphify-out/.graphify_python) -m graphify save-result \
+  --question "Explain $(cat graphify-out/.graphify_q.txt)" \
+  --answer "$(cat graphify-out/.graphify_answer.txt)" \
+  --type explain \
+  --nodes $(cat graphify-out/.graphify_nodes.txt)
 ```

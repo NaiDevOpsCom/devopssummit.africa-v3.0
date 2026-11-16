@@ -7,13 +7,21 @@ Load this when the user ran `/graphify add <url>` or passed `--watch`. Neither i
 Fetch a URL and add it to the corpus, then update the graph.
 
 ```bash
+GRAPHIFY_URL='<url>' GRAPHIFY_AUTHOR='<name or empty>' GRAPHIFY_CONTRIBUTOR='<name or empty>' \
 $(cat graphify-out/.graphify_python) -c "
-import sys
+import os, sys
 from graphify.ingest import ingest
 from pathlib import Path
 
+# Never inline the URL or names into this source: a quote or backslash in a name
+# breaks the code, and a crafted URL could inject statements (#193).
+url = os.environ['GRAPHIFY_URL']
+meta = {k: v for k, v in (
+    ('author', os.environ.get('GRAPHIFY_AUTHOR') or None),
+    ('contributor', os.environ.get('GRAPHIFY_CONTRIBUTOR') or None),
+) if v}
 try:
-    out = ingest('URL', Path('./raw'), author='AUTHOR', contributor='CONTRIBUTOR')
+    out = ingest(url, Path('./raw'), **meta)
     print(f'Saved to {out}')
 except ValueError as e:
     print(f'error: {e}', file=sys.stderr)
@@ -24,7 +32,9 @@ except RuntimeError as e:
 "
 ```
 
-Replace `URL` with the actual URL, `AUTHOR` with the user's name if provided, `CONTRIBUTOR` likewise. If the command exits with an error, tell the user what went wrong - do not silently continue. After a successful save, automatically run the `--update` pipeline on `./raw` to merge the new file into the existing graph.
+Set the URL and any author/contributor names as environment variables and leave the `author`/`contributor` kwargs out entirely when the user gave neither — inlining them as literals records `'AUTHOR'`/`'CONTRIBUTOR'` as real metadata and lets a quote in a name break the code. If the command exits with an error, tell the user what went wrong - do not silently continue.
+
+After a successful save, run the `--update` pipeline against the **existing graph root** (the `graphify-out/.graphify_root` value, normally `.`), **not `./raw`**: `ingest` writes the file under `./raw`, but the graph's `source_file` values are relative to the original scan root, so updating with `./raw` as the root changes the base and every source path stops matching.
 
 Supported URL types (auto-detected):
 - YouTube / any video URL → audio downloaded via yt-dlp, transcribed to `.txt` on next run (requires `pip install 'graphifyy[video]'`)

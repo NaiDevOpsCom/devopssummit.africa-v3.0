@@ -37,8 +37,13 @@ r = json.loads(Path('graphify-out/.graphify_incremental.json').read_text(encodin
 Path('graphify-out/.graphify_detect.json').write_text(json.dumps({
     'files': r.get('new_files', {}),
     'all_files': r.get('files', {}),
-    'total_files': r.get('new_total', 0),
+    # total_files/total_words must describe the WHOLE corpus: Step 5's report
+    # prints "N files ~ M words" from these, and pairing the changed-file count
+    # with the full-corpus word count makes the Corpus Check self-contradictory
+    # (#193). new_total is kept for steps that need the changed-subset size.
+    'total_files': r.get('total_files', r.get('new_total', 0)),
     'total_words': r.get('total_words', 0),
+    'new_total': r.get('new_total', 0),
     'skipped_sensitive': r.get('skipped_sensitive', []),
     'needs_graph': True,
 }, ensure_ascii=False), encoding=\"utf-8\")
@@ -61,7 +66,17 @@ print('code_only:', code_only)
 "
 ```
 
-If `code_only` is True: print `[graphify update] Code-only changes detected - skipping semantic extraction (no LLM needed)`, run only Step 3A (AST) on the changed files, skip Step 3B entirely (no subagents), then go straight to merge and Steps 4–8.
+If `code_only` is True: print `[graphify update] Code-only changes detected - skipping semantic extraction (no LLM needed)`, run only Step 3A (AST) on the changed files, skip Step 3B entirely (no subagents), then write an empty semantic sidecar before merging — Step 4 reads `graphify-out/.graphify_semantic.json` unconditionally, so a code-only update skips Part B without it and dies with `FileNotFoundError` (#193):
+
+```bash
+$(cat graphify-out/.graphify_python) -c "
+import json
+from pathlib import Path
+Path('graphify-out/.graphify_semantic.json').write_text(json.dumps({'nodes':[],'edges':[],'hyperedges':[],'input_tokens':0,'output_tokens':0}), encoding='utf-8')
+"
+```
+
+Then go straight to merge and Steps 4–8.
 
 If `code_only` is False (any changed file is a doc/paper/image/video): **first, if any changed file is in `new_files['video']`, run `references/transcribe.md` (Step 2.5) on those files, then rewrite `.graphify_detect.json` to move the resulting transcript paths into `files['document']` and drop `files['video']`** — otherwise raw `.mp4/.mp3` paths are fed to semantic subagents as unreadable media (#1392). Then run the full Steps 3A–3C pipeline as normal.
 
@@ -80,6 +95,10 @@ fi
 ```
 
 
+Before merging, back up the current graph so the post-Step-4 diff has something to compare against: `cp graphify-out/graph.json graphify-out/.graphify_old.json`. This must run **before** the merge below — the diff block later reads this backup, and a copy taken after the merge would compare the new graph against itself.
+
+> If this update prunes deleted files and Step 4's shrink guard refuses the smaller graph (`refused to shrink graphify-out/graph.json ... #479`), republish with the supported bypass: `graphify update --force`, or set `GRAPHIFY_FORCE=1` for the run. See `SKILL.md` Step 4.
+
 Then:
 
 ```bash
@@ -87,7 +106,6 @@ $(cat graphify-out/.graphify_python) -c "
 import json
 from pathlib import Path
 from graphify.build import build_merge
-from graphify.detect import save_manifest
 
 # Load new extraction and incremental state
 new_extraction = json.loads(Path('graphify-out/.graphify_extract.json').read_text(encoding=\"utf-8\"))
@@ -160,12 +178,34 @@ _cleared = _dispatched - _stamped
 # scan_corpus = the RAW full corpus so in-root files newly excluded since last run
 # are dropped rather than masquerading as deletions; untouched rows preserved (#1908).
 _scan = {f for fl in incremental['files'].values() for f in fl}
-save_manifest(_manifest_files, root='INPUT_PATH', scan_corpus=_scan, clear_semantic=_cleared or None)
-print('[graphify update] Manifest saved.')
+# Do NOT save the manifest here: this block runs before Steps 4-8, so a later
+# failure would stamp changed files that never reached the published graph and
+# the next --update would skip them (#193). Stage the payload and persist it
+# only after the pipeline succeeds (block after Steps 4-8).
+Path('graphify-out/.graphify_manifest_pending.json').write_text(json.dumps({
+    'files': _manifest_files,
+    'cleared': sorted(_cleared),
+    'scan': sorted(_scan),
+}, ensure_ascii=False), encoding=\"utf-8\")
+print('[graphify update] Manifest staged (saved after Steps 4-8 succeed).')
 "
 ```
 
 Then run Steps 4–8 on the merged graph as normal.
+
+**Only after Steps 4–8 succeed**, persist the manifest staged above so the next `--update` diffs against today's state instead of re-queueing every file:
+
+```bash
+$(cat graphify-out/.graphify_python) -c "
+import json
+from pathlib import Path
+from graphify.detect import save_manifest
+p = json.loads(Path('graphify-out/.graphify_manifest_pending.json').read_text(encoding=\"utf-8\"))
+save_manifest(p['files'], root='INPUT_PATH', scan_corpus=set(p['scan']), clear_semantic=set(p['cleared']) or None)
+Path('graphify-out/.graphify_manifest_pending.json').unlink(missing_ok=True)
+print('[graphify update] Manifest saved (pipeline succeeded).')
+"
+```
 
 After Step 4, show the graph diff:
 
@@ -194,8 +234,7 @@ if old_data:
 "
 ```
 
-Before the merge step, save the old graph: `cp graphify-out/graph.json graphify-out/.graphify_old.json`
-Clean up after: `rm -f graphify-out/.graphify_old.json`
+The old graph was backed up (`cp graphify-out/graph.json graphify-out/.graphify_old.json`) *before* the merge above — the diff reads that backup, so it must exist before the merge runs. Clean it up after the diff: `rm -f graphify-out/.graphify_old.json`
 
 ---
 

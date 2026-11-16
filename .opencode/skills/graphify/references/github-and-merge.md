@@ -12,10 +12,15 @@ LOCAL_PATH=$(graphify clone <github-url> [--branch <branch>])
 
 **Multiple repos (cross-repo graph):**
 ```bash
-# Clone each repo, run the full pipeline on each, then merge
+# Clone each repo, build each graph with the CLI, then merge.
 graphify clone <url1>   # → ~/.graphify/repos/<owner1>/<repo1>
 graphify clone <url2>   # → ~/.graphify/repos/<owner2>/<repo2>
-# Run /graphify on each local path to produce their graph.json files
+# Build each clone with `graphify extract <path>` — the CLI writes graphify-out/
+# *inside* the scanned path. Do NOT run /graphify here: the skill always writes to
+# the current working directory's graphify-out/, so it cannot produce the
+# per-clone graph.json files this merge expects (#193).
+graphify extract ~/.graphify/repos/<owner1>/<repo1> --code-only
+graphify extract ~/.graphify/repos/<owner2>/<repo2> --code-only
 # Then merge:
 graphify merge-graphs \
   ~/.graphify/repos/<owner1>/<repo1>/graphify-out/graph.json \

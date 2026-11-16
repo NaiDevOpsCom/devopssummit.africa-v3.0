@@ -64,6 +64,8 @@ Only when the path is one or more `https://github.com/...` URLs, or several loca
 
 ### Step 1 - Ensure graphify is installed
 
+> **POSIX shell required.** The block below is `sh`/`bash` (variable assignments, `case`, `command -v`, `||`). On Windows it must run under bash — Git Bash or WSL — because PowerShell 5.1 rejects it before detection even starts. Run the whole block through `bash -lc` rather than PowerShell (#193).
+
 ```bash
 # Detect the correct Python interpreter (handles uv tool, pipx, venv, system installs)
 PYTHON=""
@@ -96,13 +98,32 @@ fi
 # Write interpreter path for all subsequent steps (persists across invocations)
 mkdir -p graphify-out
 "$PYTHON" -c "import sys; open('graphify-out/.graphify_python', 'w', encoding='utf-8').write(sys.executable)"
-# Save scan root so `graphify update` (no args) knows where to look next time
-echo "$(cd INPUT_PATH && pwd)" > graphify-out/.graphify_root
+# Save scan root so `graphify update` (no args) knows where to look next time.
+# Quote INPUT_PATH so a path containing spaces survives (#193).
+echo "$(cd "INPUT_PATH" && pwd)" > graphify-out/.graphify_root
+# Resolve the console-script path next to the interpreter. `uv tool install` and
+# pipx put the `graphify` script beside the venv python but often leave it off
+# PATH, so later steps must use this absolute path instead of a bare `graphify`
+# (#193).
+"$PYTHON" -c "import os, sys, shutil; d=os.path.dirname(sys.executable); c=os.path.join(d,'graphify'); print(c if os.path.exists(c) else (shutil.which('graphify') or ''))" > graphify-out/.graphify_bin
+# Acquire an advisory run lock. Every step writes the SAME fixed `.graphify_*`
+# sidecar names, so two /graphify runs in one repo would otherwise consume each
+# other's intermediates and corrupt the graph (#193). Released in Step 9; a lock
+# older than 2 hours is treated as stale (a crashed run) and reclaimed.
+LOCK=graphify-out/.graphify.lock
+if [ -f "$LOCK" ] && [ -n "$(find "$LOCK" -mmin -120 2>/dev/null)" ]; then
+    echo "ERROR: another graphify run holds $LOCK (started <2h ago)." >&2
+    echo "Wait for it to finish, or delete $LOCK if it crashed, then retry (#193)." >&2
+    exit 1
+fi
+date +%s > "$LOCK"
 ```
 
 If the import succeeds, print nothing and move straight to Step 2.
 
 **In every subsequent bash block, replace `python3` with `$(cat graphify-out/.graphify_python)` to use the correct interpreter.**
+
+**Likewise, prefer `"$(cat graphify-out/.graphify_bin)"` over a bare `graphify`** for CLI subcommands (`export`, `cluster-only`, `hook`, …). The console script is often absent from `PATH` under `uv tool install`/pipx even though the import works (#193).
 
 ### Step 2 - Detect files
 
@@ -159,7 +180,28 @@ This step has two parts: **structural extraction** (deterministic, free) and **s
 **Before semantic extraction:** check whether `GEMINI_API_KEY` or `GOOGLE_API_KEY` is set. If neither is set, print this one-liner to the user:
 > Tip: set `GEMINI_API_KEY` or `GOOGLE_API_KEY` to use Gemini for semantic extraction (`pip install 'graphifyy[gemini]'`).
 
-Print it once, then continue — do not wait for the user to supply a key. If `GEMINI_API_KEY` or `GOOGLE_API_KEY` IS set, use `graphify.llm.extract_corpus_parallel(files, backend="gemini")` for semantic extraction instead of dispatching subagents. The default Gemini model is `gemini-3-flash-preview`; set `GRAPHIFY_GEMINI_MODEL` or pass `--model` in headless CLI flows to override it.
+Print it once, then continue — do not wait for the user to supply a key.
+
+If `GEMINI_API_KEY` or `GOOGLE_API_KEY` **is** set, run Gemini semantic extraction instead of dispatching subagents. This replaces all of Part B, so the block must define `files` itself and write `graphify-out/.graphify_semantic.json` — Part C reads that file unconditionally and would otherwise die with `FileNotFoundError` (#193). The default model is `gemini-3-flash-preview`; set `GRAPHIFY_GEMINI_MODEL` to override:
+
+```bash
+$(cat graphify-out/.graphify_python) -c "
+import json
+from pathlib import Path
+from graphify.llm import extract_corpus_parallel
+
+detect = json.loads(Path('graphify-out/.graphify_detect.json').read_text(encoding=\"utf-8\"))
+files = [Path(p) for k in ('document', 'paper', 'image') for p in detect.get('files', {}).get(k, [])]
+if files:
+    result = extract_corpus_parallel(files, backend='gemini', root=Path('INPUT_PATH'))
+else:
+    result = {'nodes': [], 'edges': [], 'hyperedges': [], 'input_tokens': 0, 'output_tokens': 0}
+Path('graphify-out/.graphify_semantic.json').write_text(json.dumps(result, ensure_ascii=False), encoding=\"utf-8\")
+print(f'Gemini semantic extraction: {len(result.get(\"nodes\", []))} nodes')
+"
+```
+
+Then skip to Part C (AST + this semantic file are merged there).
 
 > **No other API keys are read.** When `GEMINI_API_KEY`/`GOOGLE_API_KEY` are unset, semantic extraction falls to the host agent itself — the running session is the LLM. On a host that dispatches subagents (e.g. Claude Code), dispatch them as written in Part B. On a host that runs the CLI directly in a terminal and cannot dispatch subagents, do not stall: a code-only corpus has no semantic work, so write the empty semantic file (Part B "Fast path") and continue to Part C; for a corpus with docs/papers/images, either set a Gemini key or extract those inline yourself, but in no case prompt for `ANTHROPIC_API_KEY` — that prompt is a misread of this skill.
 
@@ -244,7 +286,19 @@ print(f'Cache: {len(all_files)-len(uncached)} files hit, {len(uncached)} files n
 "
 ```
 
-Only dispatch subagents for files listed in `graphify-out/.graphify_uncached.txt`. If all files are cached, skip to Part C directly.
+Only dispatch subagents for files listed in `graphify-out/.graphify_uncached.txt`. If all files are cached, skip to Part C — but first materialise `graphify-out/.graphify_semantic.json` from the cache, because Part C reads it unconditionally and would otherwise die with `FileNotFoundError` (#193):
+
+```bash
+$(cat graphify-out/.graphify_python) -c "
+import json
+from pathlib import Path
+cp = Path('graphify-out/.graphify_cached.json')
+cached = json.loads(cp.read_text(encoding=\"utf-8\")) if cp.exists() else {}
+merged = {'nodes': cached.get('nodes', []), 'edges': cached.get('edges', []), 'hyperedges': cached.get('hyperedges', []), 'input_tokens': cached.get('input_tokens', 0), 'output_tokens': cached.get('output_tokens', 0)}
+Path('graphify-out/.graphify_semantic.json').write_text(json.dumps(merged, indent=2, ensure_ascii=False), encoding=\"utf-8\")
+print(f'All files cached - semantic file materialised ({len(merged[\"nodes\"])} nodes)')
+"
+```
 
 **Step B1 - Split into chunks**
 
@@ -257,16 +311,22 @@ Load files from `graphify-out/.graphify_uncached.txt`. Split into chunks of 20-2
 Dispatch one `@mention` per chunk — ALL in the same response:
 
 ```
-@agent Chunk CHUNK_NUM of TOTAL_CHUNKS: [extraction prompt with FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, DEEP_MODE substituted]
+@agent Chunk CHUNK_NUM of TOTAL_CHUNKS: [extraction prompt with FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, CHUNK_PATH, DEEP_MODE substituted]
 
 @agent Chunk 2 of TOTAL_CHUNKS: [next chunk]
+```
+
+**Before dispatching, clear any chunk files left by a previous run** — a retry after an interrupted run would otherwise merge stale chunk JSON and reintroduce deleted nodes/edges (#193):
+
+```bash
+rm -f graphify-out/.graphify_chunk_*.json
 ```
 
 Wait for all agents to return. Parse each response as JSON. Accumulate nodes/edges/hyperedges across all results and write to `graphify-out/.graphify_semantic_new.json`. If the `@agent` path cannot write chunk files, fall back to the serial path that writes each `graphify-out/.graphify_chunk_NN.json` before merge.
 
 Subagent prompt template:
 
-See `references/extraction-spec.md` for the exact subagent prompt (JSON schema, node-ID rules, confidence rubric, hyperedge, and vision rules). Load it only here, only when at least one chunk holds a doc, paper, or image; a pure-code corpus has skipped Part B and never reads it. Pass each agent that prompt verbatim with FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, and DEEP_MODE substituted.
+See `references/extraction-spec.md` for the exact subagent prompt (JSON schema, node-ID rules, confidence rubric, hyperedge, and vision rules). Load it only here, only when at least one chunk holds a doc, paper, or image; a pure-code corpus has skipped Part B and never reads it. Pass each agent that prompt verbatim with **FILE_LIST, CHUNK_NUM, TOTAL_CHUNKS, CHUNK_PATH, and DEEP_MODE** all substituted. `CHUNK_PATH` must be the absolute path `graphify-out/.graphify_chunk_NN.json` (NN = the chunk number): the prompt tells the agent to write the chunk JSON there with the Write tool, and every downstream merge glob depends on that file existing (#193).
 
 **Step B3 - Collect, cache, and merge**
 
@@ -418,17 +478,10 @@ labels = {cid: 'Community ' + str(cid) for cid in communities}
 # Placeholder questions - regenerated with real labels in Step 5
 questions = suggest_questions(G, communities, labels)
 
-# Export FIRST and honor the #479 shrink-guard: to_json returns False (writing
-# nothing) when the new graph is smaller than the existing graph.json. Only write
-# GRAPH_REPORT.md + the analysis sidecar when the graph was actually written, so
-# they never describe a graph that graph.json doesn't contain (#1392).
-wrote = to_json(G, communities, 'graphify-out/graph.json')
-if not wrote:
-    print('ERROR: refused to shrink graphify-out/graph.json (existing graph has more nodes; #479).')
-    print('If this shrink is intentional (you deleted files), re-run a full build with --force.')
-    raise SystemExit(1)
+# Build the report + analysis sidecar IN MEMORY first. Nothing is written until
+# all three artifacts are ready, so a failure in generate() can never leave a
+# fresh graph.json paired with a stale GRAPH_REPORT.md (#193).
 report = generate(G, communities, cohesion, labels, gods, surprises, detection, tokens, 'INPUT_PATH', suggested_questions=questions)
-Path('graphify-out/GRAPH_REPORT.md').write_text(report, encoding=\"utf-8\")
 analysis = {
     'communities': {str(k): v for k, v in communities.items()},
     'cohesion': {str(k): v for k, v in cohesion.items()},
@@ -436,6 +489,16 @@ analysis = {
     'surprises': surprises,
     'questions': questions,
 }
+# Publish graph.json, honouring the #479 shrink-guard: to_json returns False
+# (writing nothing) when the new graph is smaller than the existing graph.json.
+# Only then write the report + sidecar, so all three describe the same graph.
+wrote = to_json(G, communities, 'graphify-out/graph.json')
+if not wrote:
+    print('ERROR: refused to shrink graphify-out/graph.json (existing graph has more nodes; #479).')
+    print('If this shrink is intentional (you deleted files), republish with --force:')
+    print('  graphify update --force   (or set GRAPHIFY_FORCE=1 for the run)')
+    raise SystemExit(1)
+Path('graphify-out/GRAPH_REPORT.md').write_text(report, encoding=\"utf-8\")
 Path('graphify-out/.graphify_analysis.json').write_text(json.dumps(analysis, indent=2, ensure_ascii=False), encoding=\"utf-8\")
 print(f'Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges, {len(communities)} communities')
 "
@@ -512,7 +575,8 @@ Path('graphify-out/.graphify_labels.json').write_text(json.dumps({str(k): v for 
 wrote = to_json(G, communities, 'graphify-out/graph.json', community_labels=labels)
 if not wrote:
     print('ERROR: refused to shrink graphify-out/graph.json (existing graph has more nodes; #479).')
-    print('If this shrink is intentional (you deleted files), re-run a full build with --force.')
+    print('If this shrink is intentional (you deleted files), republish with --force:')
+    print('  graphify update --force   (or set GRAPHIFY_FORCE=1 for the run)')
 print('Report updated with community labels')
 "
 ```
@@ -528,16 +592,18 @@ If `--obsidian` was given:
 
 - If `--obsidian-dir <path>` was also given, pass it via `--dir`. Otherwise defaults to `graphify-out/obsidian`.
 
+The `export` subcommands need the CLI on `PATH`, which `uv tool install` and pipx often leave unset. Use the absolute path resolved in Step 1 (`graphify-out/.graphify_bin`) instead of a bare `graphify`, or these steps fail with `graphify: command not found` after the build has already done all its work (#193):
+
 ```bash
-graphify export obsidian
-# or with custom dir: graphify export obsidian --dir ~/vaults/my-project
+"$(cat graphify-out/.graphify_bin)" export obsidian
+# or with custom dir: "$(cat graphify-out/.graphify_bin)" export obsidian --dir ~/vaults/my-project
 ```
 
 Generate the HTML graph (always, unless `--no-viz`):
 
 ```bash
-graphify export html  # auto-aggregates to community view if graph > 5000 nodes
-# or: graphify export html --no-viz
+"$(cat graphify-out/.graphify_bin)" export html  # auto-aggregates to community view if graph > 5000 nodes
+# or: "$(cat graphify-out/.graphify_bin)" export html --no-viz
 ```
 
 ### Steps 6b-8 - Wiki, Neo4j, FalkorDB, SVG, GraphML, MCP, benchmark (only on their flags)
@@ -587,32 +653,44 @@ _cleared = _dispatched - _stamped
 _scan = {f for fl in _corpus.values() for f in fl}
 save_manifest(_manifest_files, root='INPUT_PATH', scan_corpus=_scan, clear_semantic=_cleared or None)
 
-# Update cumulative cost tracker
+# Append-only cost log. A read-modify-write of one JSON file loses records when
+# two runs finish together (last writer wins); appending a single JSONL line is
+# one atomic write and the totals are recomputed by summing (#193).
 input_tok = extract.get('input_tokens', 0)
 output_tok = extract.get('output_tokens', 0)
 
-cost_path = Path('graphify-out/cost.json')
-if cost_path.exists():
-    cost = json.loads(cost_path.read_text(encoding=\"utf-8\"))
-else:
-    cost = {'runs': [], 'total_input_tokens': 0, 'total_output_tokens': 0}
+cost_log = Path('graphify-out/cost.jsonl')
+legacy = Path('graphify-out/cost.json')
+if not cost_log.exists() and legacy.exists():
+    # One-time migration of the old single-file tracker (read-only; not rewritten).
+    with cost_log.open('w', encoding=\"utf-8\") as fh:
+        for r in json.loads(legacy.read_text(encoding=\"utf-8\")).get('runs', []):
+            fh.write(json.dumps(r, ensure_ascii=False) + '\n')
 
-cost['runs'].append({
+record = {
     'date': datetime.now(timezone.utc).isoformat(),
     'input_tokens': input_tok,
     'output_tokens': output_tok,
     'files': detect.get('total_files', 0),
-})
-cost['total_input_tokens'] += input_tok
-cost['total_output_tokens'] += output_tok
-cost_path.write_text(json.dumps(cost, indent=2, ensure_ascii=False), encoding=\"utf-8\")
+}
+with cost_log.open('a', encoding=\"utf-8\") as fh:
+    fh.write(json.dumps(record, ensure_ascii=False) + '\n')
+
+runs = [json.loads(line) for line in cost_log.read_text(encoding=\"utf-8\").splitlines() if line.strip()]
+total_in = sum(r.get('input_tokens', 0) for r in runs)
+total_out = sum(r.get('output_tokens', 0) for r in runs)
 
 print(f'This run: {input_tok:,} input tokens, {output_tok:,} output tokens')
-print(f'All time: {cost[\"total_input_tokens\"]:,} input, {cost[\"total_output_tokens\"]:,} output ({len(cost[\"runs\"])} runs)')
+print(f'All time: {total_in:,} input, {total_out:,} output ({len(runs)} runs)')
 "
 rm -f graphify-out/.graphify_detect.json graphify-out/.graphify_extract.json graphify-out/.graphify_ast.json graphify-out/.graphify_semantic.json graphify-out/.graphify_analysis.json
 find graphify-out -maxdepth 1 -name '.graphify_chunk_*.json' -delete 2>/dev/null
 rm -f graphify-out/.needs_update 2>/dev/null || true
+# Per-run scratch: the pending-manifest staging file and the pre-update graph
+# backup (both written by the --update runbook), plus the run lock acquired in
+# Step 1. `.graphify_python`, `.graphify_root`, and `.graphify_bin` are
+# deliberately kept — later invocations read them.
+rm -f graphify-out/.graphify_manifest_pending.json graphify-out/.graphify_old.json graphify-out/.graphify.lock 2>/dev/null || true
 ```
 
 Replace INPUT_PATH with the actual path (same value used in Steps 4-5) so the manifest is relativized to the scan root.
