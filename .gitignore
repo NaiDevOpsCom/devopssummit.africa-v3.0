@@ -44,5 +44,10 @@ storybook-static
 .mcp.json
 .windsurfrules
 .github/copilot-instructions.md
+
+# Graphify generated output and per-run scratch files.
+# Project configuration (.opencode/, AGENTS.md) is committed on purpose.
 graphify-out/
+.graphify_*.json
+.graphify_*.txt
 
