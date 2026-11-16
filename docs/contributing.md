@@ -94,7 +94,7 @@ The repo ships project-scoped [Graphify](https://github.com/Graphify-Labs/graphi
 OpenCode. If you use OpenCode and want faster codebase queries:
 
 ```sh
-pipx install graphify
+pipx install graphifyy
 graphify extract . --code-only   # local AST only — no API cost
 ```
 
