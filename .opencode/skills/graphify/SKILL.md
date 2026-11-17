@@ -95,6 +95,14 @@ if ! "$PYTHON" -c "import graphify" 2>/dev/null; then
           || "$PYTHON" -m pip install graphifyy -q --break-system-packages 2>&1 | tail -3
     fi
 fi
+# Hard-stop if the install attempts above did not produce a usable module: the
+# paths written next are consumed by every later step, so continuing would fail
+# hundreds of lines later with an opaque ImportError (#193).
+if ! "$PYTHON" -c "import graphify" 2>/dev/null; then
+    echo "ERROR: 'graphify' is still not importable after the install attempts." >&2
+    echo "Install it manually (\`pipx install graphifyy\`) and re-run." >&2
+    exit 1
+fi
 # Write interpreter path for all subsequent steps (persists across invocations)
 mkdir -p graphify-out
 "$PYTHON" -c "import sys; open('graphify-out/.graphify_python', 'w', encoding='utf-8').write(sys.executable)"
@@ -108,22 +116,29 @@ echo "$(cd "INPUT_PATH" && pwd)" > graphify-out/.graphify_root
 "$PYTHON" -c "import os, sys, shutil; d=os.path.dirname(sys.executable); c=os.path.join(d,'graphify'); print(c if os.path.exists(c) else (shutil.which('graphify') or ''))" > graphify-out/.graphify_bin
 # Acquire an advisory run lock. Every step writes the SAME fixed `.graphify_*`
 # sidecar names, so two /graphify runs in one repo would otherwise consume each
-# other's intermediates and corrupt the graph (#193). Released in Step 9; a lock
-# older than 2 hours is treated as stale (a crashed run) and reclaimed.
+# other's intermediates and corrupt the graph (#193). The lock holds the owner's
+# PID: retries after a crashed/failed run reclaim it automatically because that
+# process is gone, and Step 9 removes it on the success path.
 LOCK=graphify-out/.graphify.lock
-if [ -f "$LOCK" ] && [ -n "$(find "$LOCK" -mmin -120 2>/dev/null)" ]; then
-    echo "ERROR: another graphify run holds $LOCK (started <2h ago)." >&2
-    echo "Wait for it to finish, or delete $LOCK if it crashed, then retry (#193)." >&2
-    exit 1
+if [ -f "$LOCK" ]; then
+    _LOCK_PID=$(cat "$LOCK" 2>/dev/null)
+    if [ -n "$_LOCK_PID" ] && kill -0 "$_LOCK_PID" 2>/dev/null; then
+        echo "ERROR: another graphify run (pid $_LOCK_PID) holds $LOCK." >&2
+        echo "Wait for it to finish, or delete $LOCK if that process is gone, then retry (#193)." >&2
+        exit 1
+    fi
+    echo "Reclaiming stale lock from pid ${_LOCK_PID:-unknown}." >&2
 fi
-date +%s > "$LOCK"
+echo $$ > "$LOCK"
 ```
 
 If the import succeeds, print nothing and move straight to Step 2.
 
 **In every subsequent bash block, replace `python3` with `$(cat graphify-out/.graphify_python)` to use the correct interpreter.**
 
-**Likewise, prefer `"$(cat graphify-out/.graphify_bin)"` over a bare `graphify`** for CLI subcommands (`export`, `cluster-only`, `hook`, …). The console script is often absent from `PATH` under `uv tool install`/pipx even though the import works (#193).
+**Likewise, use `"$(cat graphify-out/.graphify_bin)"` instead of a bare `graphify`** for CLI subcommands (`export`, `cluster-only`, `hook`, …). The console script is often absent from `PATH` under `uv tool install`/pipx even though the import works (#193). If `.graphify_bin` is empty (no console script was installed), every CLI subcommand still runs as `$(cat graphify-out/.graphify_python) -m graphify <subcommand>`.
+
+The run lock is **advisory**: it prevents two cooperating `/graphify` runs from interleaving, but it does not release itself on a failed run. It holds the owner's PID, so a retry reclaims it automatically once that process is gone; if the retry still complains, delete `graphify-out/.graphify.lock`.
 
 ### Step 2 - Detect files
 
@@ -617,6 +632,7 @@ These run only when their flag is present (`--wiki`, `--neo4j`/`--neo4j-push`, `
 ```bash
 $(cat graphify-out/.graphify_python) -c "
 import json
+import sys
 from pathlib import Path
 from datetime import datetime, timezone
 from graphify.detect import save_manifest
@@ -676,7 +692,17 @@ record = {
 with cost_log.open('a', encoding=\"utf-8\") as fh:
     fh.write(json.dumps(record, ensure_ascii=False) + '\n')
 
-runs = [json.loads(line) for line in cost_log.read_text(encoding=\"utf-8\").splitlines() if line.strip()]
+runs = []
+for line in cost_log.read_text(encoding=\"utf-8\").splitlines():
+    if not line.strip():
+        continue
+    try:
+        runs.append(json.loads(line))
+    except json.JSONDecodeError:
+        # A truncated or interleaved line (crash mid-write, or two runs racing)
+        # must not abort the very last step of the run: skip it, keep the rest,
+        # and surface it on stderr so it can be inspected (#193).
+        print(f'Skipping malformed cost-log line: {line[:80]!r}', file=sys.stderr)
 total_in = sum(r.get('input_tokens', 0) for r in runs)
 total_out = sum(r.get('output_tokens', 0) for r in runs)
 

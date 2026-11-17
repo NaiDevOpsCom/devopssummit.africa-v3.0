@@ -9,7 +9,7 @@ Use when you've added or modified files since the last run. Only re-extracts cha
 ```bash
 $(cat graphify-out/.graphify_python) -c "
 import sys, json
-from graphify.detect import detect_incremental, save_manifest
+from graphify.detect import detect_incremental
 from pathlib import Path
 
 result = detect_incremental(Path('INPUT_PATH'))

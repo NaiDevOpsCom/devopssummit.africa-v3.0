@@ -9,7 +9,7 @@ Load this when the user passed one of the export flags (`--wiki`, `--neo4j`, `--
 Run this before Step 9 (cleanup) so `.graphify_labels.json` is still available.
 
 ```bash
-graphify export wiki
+"$(cat graphify-out/.graphify_bin)" export wiki
 ```
 
 ### Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag)
@@ -17,13 +17,13 @@ graphify export wiki
 **If `--neo4j`** - generate a Cypher file for manual import:
 
 ```bash
-graphify export neo4j
+"$(cat graphify-out/.graphify_bin)" export neo4j
 ```
 
 **If `--neo4j-push <uri>`** - push directly to a running Neo4j instance. **Use the URI given to the flag** — hardcoding `bolt://localhost:7687` silently ignores a remote host or alternate port. Pass the password through the `NEO4J_PASSWORD` environment variable; never put it on `--password`, where it leaks into shell history and process listings:
 
 ```bash
-NEO4J_PASSWORD=… graphify export neo4j --push "<uri-from-the-flag>" --user neo4j
+NEO4J_PASSWORD=… "$(cat graphify-out/.graphify_bin)" export neo4j --push "<uri-from-the-flag>" --user neo4j
 ```
 
 `--user` defaults to `neo4j`. `--password` exists only for non-interactive use where the env var is impossible; otherwise omit it and graphify reads `NEO4J_PASSWORD`. Uses MERGE - safe to re-run without creating duplicates.
@@ -33,13 +33,13 @@ NEO4J_PASSWORD=… graphify export neo4j --push "<uri-from-the-flag>" --user neo
 **If `--falkordb`** - generate a Cypher file. The statements are OpenCypher, but FalkorDB's `GRAPH.QUERY` runs one statement at a time (no bulk script import like Neo4j's `cypher-shell`), so prefer `--falkordb-push` to load a graph. Use this only when you want the portable `cypher.txt` artifact:
 
 ```bash
-graphify export falkordb
+"$(cat graphify-out/.graphify_bin)" export falkordb
 ```
 
 **If `--falkordb-push <uri>`** - push directly to a running FalkorDB instance. Use the URI given to the flag rather than the hardcoded default, and pass any password through `FALKORDB_PASSWORD` (never `--password`, per the Neo4j note above):
 
 ```bash
-FALKORDB_PASSWORD=… graphify export falkordb --push "<uri-from-the-flag>"
+FALKORDB_PASSWORD=… "$(cat graphify-out/.graphify_bin)" export falkordb --push "<uri-from-the-flag>"
 ```
 
 Auth is optional; when the instance requires it, graphify reads `FALKORDB_PASSWORD`. The scheme is informational - `redis://` or a bare `host:port` work too - and the target graph defaults to `graphify`. Uses MERGE - safe to re-run without creating duplicates.
@@ -47,13 +47,13 @@ Auth is optional; when the instance requires it, graphify reads `FALKORDB_PASSWO
 ### Step 7b - SVG export (only if --svg flag)
 
 ```bash
-graphify export svg
+"$(cat graphify-out/.graphify_bin)" export svg
 ```
 
 ### Step 7c - GraphML export (only if --graphml flag)
 
 ```bash
-graphify export graphml
+"$(cat graphify-out/.graphify_bin)" export graphml
 ```
 
 ### Step 7d - MCP server (only if --mcp flag)
@@ -83,7 +83,7 @@ To configure in Claude Desktop, add to `claude_desktop_config.json`. Claude Desk
 If `total_words` from `graphify-out/.graphify_detect.json` is greater than 5,000, run:
 
 ```bash
-graphify benchmark
+"$(cat graphify-out/.graphify_bin)" benchmark
 ```
 
 Print the output directly in chat. If `total_words <= 5000`, skip silently - the graph value is structural clarity, not token compression, for small corpora.

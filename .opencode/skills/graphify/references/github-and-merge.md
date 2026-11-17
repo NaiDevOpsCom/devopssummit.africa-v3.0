@@ -2,6 +2,8 @@
 
 Load this when the user passed one or more `https://github.com/...` URLs, or named several local subfolders to merge into one graph.
 
+> **This runs before Step 1**, so `graphify-out/.graphify_python` and `.graphify_bin` do not exist yet: the commands below deliberately call a bare `graphify` from `PATH`. If it is not on `PATH` (or `command -v graphify` fails), install it first with `pipx install graphifyy` (`uv tool install graphifyy` also works) and re-open the shell so the console script is found. Step 1 later resolves the absolute paths for every subsequent step.
+
 ### Step 0 - Clone GitHub repo(s) (only if a GitHub URL was given)
 
 **Single repo:**
