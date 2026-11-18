@@ -15,8 +15,7 @@ coverage/
 .lighthouseci/
 .release-temp/
 
-# Vendored static assets and image-heavy Storybook fixtures
-public/
+# Image-heavy Storybook fixtures
 src/stories/assets/
 
 # Large generated or machine-written data files

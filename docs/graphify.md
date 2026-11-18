@@ -9,13 +9,11 @@ without it.
 
 Project-scoped configuration is committed so every contributor and agent gets identical behaviour:
 
-| Path                            | Purpose                                            |
-| ------------------------------- | -------------------------------------------------- |
-| `.opencode/opencode.json`       | Registers the OpenCode plugin                      |
-| `.opencode/plugins/graphify.js` | Reminds agents to query the graph before searching |
-| `.opencode/skills/graphify/`    | Graphify skill + references for OpenCode           |
-| `AGENTS.md`                     | Agent instructions, including the Graphify rules   |
-| `.graphifyignore`               | Corpus exclusions layered on top of `.gitignore`   |
+| Path                         | Purpose                                          |
+| ---------------------------- | ------------------------------------------------ |
+| `.opencode/skills/graphify/` | Graphify skill + references for OpenCode         |
+| `AGENTS.md`                  | Agent instructions, including the Graphify rules |
+| `.graphifyignore`            | Corpus exclusions layered on top of `.gitignore` |
 
 Everything generated during a run (`graphify-out/`, `.graphify_*.json`, `.graphify_*.txt`) is
 gitignored — never commit it.
@@ -23,15 +21,20 @@ gitignored — never commit it.
 ## Setup
 
 ```sh
-# Install the CLI (once, user-level)
-pipx install graphify
+# Install the CLI (once, user-level). The PyPI distribution is `graphifyy`;
+# the installed executable is `graphify`.
+pipx install graphifyy
 
 # Install project config for OpenCode (already committed; re-run only to upgrade)
 graphify install --project --platform opencode
 ```
 
-After reinstalling, check `git diff AGENTS.md`: the generated block must stay verbatim so future
-installs merge cleanly instead of duplicating it.
+> **`graphify install --project` also (re)writes two files this repo deliberately does not keep:**
+> `.opencode/plugins/graphify.js` and `.opencode/opencode.json`. The plugin is a V1-style export that
+> OpenCode V2 does not run, and its reminder duplicates the `AGENTS.md` rules, so both were removed.
+> The same command also rewrites the `AGENTS.md` graphify block (which this repo patches) and the
+> skill files. After any reinstall, re-apply every local patch below — including deleting the two
+> regenerated files.
 
 ## Usage
 
@@ -50,10 +53,12 @@ The first `extract` scans the whole repo; later `update` runs only touch changed
 
 ## What goes in the graph
 
-`.graphifyignore` excludes generated output, vendored tooling, `public/` assets, Storybook image
-fixtures, and large machine-written files (`lighthouse-baseline.json`, `gallery.generated.json`,
-`package-lock.json`). Add an entry there rather than `.gitignore` when you only want to keep
-something out of the graph.
+`.graphifyignore` excludes generated output, vendored tooling, Storybook image fixtures, and large
+machine-written files (`lighthouse-baseline.json`, `gallery.generated.json`, `package-lock.json`).
+It deliberately does **not** exclude `public/`: everything there is first-party — deployment config
+(`_headers`, `_redirects`, `robots.txt`) and the two GTM scripts (`scripts/gtm.js`,
+`scripts/gtm-loader.js`) referenced by `index.html`. Add an entry there rather than `.gitignore` when
+you only want to keep something out of the graph.
 
 ## CI and formatting
 
@@ -62,9 +67,41 @@ workflow runs `npx prettier --check .` and would otherwise fail on generated con
 
 ## Troubleshooting
 
-| Symptom                                 | Fix                                                         |
-| --------------------------------------- | ----------------------------------------------------------- |
-| `graphify: command not found`           | `pipx install graphify`; ensure `~/.local/bin` is on `PATH` |
-| Queries return stale results            | `graphify update .`                                         |
-| `graphify-out/` missing                 | `graphify extract . --code-only`                            |
-| Duplicate Graphify block in `AGENTS.md` | Restore the block, then rerun `graphify install --project`  |
+| Symptom                                 | Fix                                                          |
+| --------------------------------------- | ------------------------------------------------------------ |
+| `graphify: command not found`           | `pipx install graphifyy`; ensure `~/.local/bin` is on `PATH` |
+| Queries return stale results            | `graphify update .`                                          |
+| `graphify-out/` missing                 | `graphify extract . --code-only`                             |
+| Duplicate Graphify block in `AGENTS.md` | Restore the block, then rerun `graphify install --project`   |
+
+## Local patches to the vendored skill
+
+`.opencode/skills/graphify/`, the graphify block in `AGENTS.md`, and the OpenCode plugin/config are
+generated by `graphify install --project --platform opencode` (upstream v0.9.61). Everything here is
+committed and **locally patched** — the generated block is deliberately _not_ kept verbatim — to fix
+correctness, safety, and portability issues that upstream still ships. Re-running `graphify install`
+overwrites the skill files, rewrites the `AGENTS.md` block, and recreates the two removed files, so
+after any reinstall re-apply (or verify) every patch in this table:
+
+| File                             | Patch                                                                                                                              |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `SKILL.md` Step 1 / Step 9       | Run-lock (`graphify-out/.graphify.lock`) so concurrent runs cannot mix inputs                                                      |
+| `SKILL.md` Step 1                | Quote `INPUT_PATH` (`cd "INPUT_PATH"`); mark the block POSIX-only                                                                  |
+| `SKILL.md` Step 3 B (Gemini)     | Define `files`; write `.graphify_semantic.json`                                                                                    |
+| `SKILL.md` Step 3 B (cache path) | Materialise `.graphify_semantic.json` from `.graphify_cached.json`                                                                 |
+| `SKILL.md` Step 3 B2/B3          | Pass `CHUNK_PATH`; clear stale `.graphify_chunk_*.json` before dispatch                                                            |
+| `SKILL.md` Step 4                | Generate the report before writing `graph.json`                                                                                    |
+| `SKILL.md` Step 4                | Point the shrink-guard error at `graphify update --force`                                                                          |
+| `SKILL.md` Step 6/7              | Resolve the CLI from `.graphify_python`'s bin dir, not bare `PATH`                                                                 |
+| `SKILL.md` Step 9                | Append-only cost records under the run lock                                                                                        |
+| `references/update.md`           | Full `total_files`; empty semantic sidecar; manifest after the pipeline; move old-graph `cp` before merge; `--force` for deletions |
+| `references/query.md`            | Honest DFS wording; no shell/source interpolation; better tie-breaking; emit `source_location`                                     |
+| `references/exports.md`          | Honour `--push <uri>`; use `NEO4J_PASSWORD`/`FALKORDB_PASSWORD`; background the MCP server                                         |
+| `references/extraction-spec.md`  | Add `rationale`; discrete confidence set; corrected node-ID example                                                                |
+| `references/add-watch.md`        | Pass metadata via env (no source interpolation); default `author`/`contributor`; update the existing root                          |
+| `references/hooks.md`            | Document the first-commit (`git diff HEAD~1`) no-op                                                                                |
+| `references/transcribe.md`       | Don't read god nodes before they exist                                                                                             |
+| `references/github-and-merge.md` | Use `graphify extract <clone>` so outputs land inside each clone                                                                   |
+| `AGENTS.md` graphify block       | Guard `graphify update .` on graphify being installed and a graph existing; state Graphify is optional                             |
+| `.opencode/opencode.json`        | Delete after reinstall — legacy singular `plugin` key; V2 auto-discovers `.opencode/plugins/`                                      |
+| `.opencode/plugins/graphify.js`  | Delete after reinstall — V1-style export that OpenCode V2 does not run                                                             |

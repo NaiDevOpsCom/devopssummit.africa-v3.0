@@ -14,6 +14,8 @@ graphify hook status     # check
 
 After every `git commit`, the hook detects which code files changed (via `git diff HEAD~1`), re-runs AST extraction on those files, and rebuilds `graph.json` and `GRAPH_REPORT.md`. Doc/image changes are ignored by the hook - run `/graphify --update` manually for those.
 
+A repository's **first commit has no parent**, so `git diff HEAD~1` cannot produce a diff and the hook has nothing to process. Build the graph manually for that first commit with `/graphify <path>` (or `graphify extract <path> --code-only`).
+
 If a post-commit hook already exists, graphify appends to it rather than replacing it.
 
 ---
