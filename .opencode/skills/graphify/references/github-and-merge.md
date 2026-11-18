@@ -1,0 +1,53 @@
+# graphify reference: GitHub clone and cross-repo merge
+
+Load this when the user passed one or more `https://github.com/...` URLs, or named several local subfolders to merge into one graph.
+
+> **This runs before Step 1**, so `graphify-out/.graphify_python` and `.graphify_bin` do not exist yet: the commands below deliberately call a bare `graphify` from `PATH`. If it is not on `PATH` (or `command -v graphify` fails), install it first with `pipx install graphifyy` (`uv tool install graphifyy` also works) and re-open the shell so the console script is found. Step 1 later resolves the absolute paths for every subsequent step.
+
+### Step 0 - Clone GitHub repo(s) (only if a GitHub URL was given)
+
+**Single repo:**
+```bash
+LOCAL_PATH=$(graphify clone <github-url> [--branch <branch>])
+# Use LOCAL_PATH as the target for all subsequent steps
+```
+
+**Multiple repos (cross-repo graph):**
+```bash
+# Clone each repo, build each graph with the CLI, then merge.
+graphify clone <url1>   # → ~/.graphify/repos/<owner1>/<repo1>
+graphify clone <url2>   # → ~/.graphify/repos/<owner2>/<repo2>
+# Build each clone with `graphify extract <path>` — the CLI writes graphify-out/
+# *inside* the scanned path. Do NOT run /graphify here: the skill always writes to
+# the current working directory's graphify-out/, so it cannot produce the
+# per-clone graph.json files this merge expects (#193).
+graphify extract ~/.graphify/repos/<owner1>/<repo1> --code-only
+graphify extract ~/.graphify/repos/<owner2>/<repo2> --code-only
+# Then merge:
+graphify merge-graphs \
+  ~/.graphify/repos/<owner1>/<repo1>/graphify-out/graph.json \
+  ~/.graphify/repos/<owner2>/<repo2>/graphify-out/graph.json \
+  --out graphify-out/cross-repo-graph.json
+```
+
+Graphify clones into `~/.graphify/repos/<owner>/<repo>` and reuses existing clones on repeat runs. Each node in the merged graph carries a `repo` attribute so you can filter by origin.
+
+**Multiple local subfolders (monorepo or multi-service layout):**
+
+The skill pipeline writes all intermediate and final outputs to `graphify-out/` in the current working directory. Running the skill on each subfolder separately will clobber the same output dir. Instead, use the CLI directly for each subfolder — it places `graphify-out/` *inside* the scanned path:
+
+```bash
+graphify extract ./core/     # → ./core/graphify-out/graph.json
+graphify extract ./service/  # → ./service/graphify-out/graph.json
+graphify extract ./platform/ # → ./platform/graphify-out/graph.json
+# Add --backend gemini|kimi|openai|deepseek|claude-cli depending on which API key you have set
+
+# Then merge at the project root:
+graphify merge-graphs \
+  ./core/graphify-out/graph.json \
+  ./service/graphify-out/graph.json \
+  ./platform/graphify-out/graph.json \
+  --out graphify-out/graph.json
+```
+
+Once `graphify-out/graph.json` exists, the fast path above takes over: any codebase question runs `graphify query` directly on the merged graph — no re-extraction, no size gate.

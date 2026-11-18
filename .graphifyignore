@@ -1,0 +1,27 @@
+# Graphify corpus exclusions.
+#
+# Graphify layers these rules on top of .gitignore. Keep the corpus to source,
+# docs, and configuration that a contributor would actually read — generated
+# output, vendored tooling, and data dumps only add noise to the graph.
+
+# Graphify's own installed skill/references and this project's generated graph
+.opencode/skills/graphify/
+graphify-out/
+
+# Build output and test artifacts
+dist/
+storybook-static/
+coverage/
+.lighthouseci/
+.release-temp/
+
+# Image-heavy Storybook fixtures
+src/stories/assets/
+
+# Large generated or machine-written data files
+lighthouse-baseline.json
+src/data/gallery.generated.json
+package-lock.json
+
+# Dependency and tooling caches
+node_modules/

@@ -211,6 +211,7 @@ Please read [**CONTRIBUTING.md**](./CONTRIBUTING.md) for the full guide includin
 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)   | Key technical decisions and why they were made                 |
 | [`docs/CMS_SCHEMA.md`](./docs/CMS_SCHEMA.md)       | CMS content types, fields, and validation rules                |
 | [`docs/CONTENT_GUIDE.md`](./docs/CONTENT_GUIDE.md) | Guide for non-developer contributors updating content          |
+| [`docs/graphify.md`](./docs/graphify.md)           | Optional codebase knowledge graph for contributors and agents  |
 
 > Some of these documents are works in progress. See the [open TODO items in PRD.md](./PRD.md#12-open-questions--todos).
 

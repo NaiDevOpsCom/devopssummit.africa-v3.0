@@ -102,6 +102,9 @@ jobs:
       - name: Verify lockfile sync
         run: npm ci
 
+      # Playwright must stay >= 1.61: ubuntu-latest has moved to Ubuntu 26.04,
+      # and older Playwright versions cannot install browsers for it
+      # ("Playwright does not support chromium on ubuntu26.04-x64").
       - name: Install Playwright browser for tests
         run: npx playwright install chromium --with-deps
 

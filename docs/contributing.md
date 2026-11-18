@@ -88,6 +88,19 @@ The app will be available at **http://localhost:5173**
 
 > ⚠️ If port 5173 is in use, Vite will automatically try the next available port. Check your terminal output for the actual URL.
 
+### Optional: Graphify knowledge graph
+
+The repo ships project-scoped [Graphify](https://github.com/Graphify-Labs/graphify) config for
+OpenCode. If you use OpenCode and want faster codebase queries:
+
+```sh
+pipx install graphifyy
+graphify extract . --code-only   # local AST only — no API cost
+```
+
+See [`docs/graphify.md`](./graphify.md) for commands and troubleshooting. It is entirely optional —
+ignore it if you use another editor.
+
 ---
 
 ## Environment Variables
