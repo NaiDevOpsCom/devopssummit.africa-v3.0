@@ -10,6 +10,9 @@ updates:
       timezone: "Africa/Nairobi" # changed from UTC
     open-pull-requests-limit: 10
     target-branch: "staging"
+    # Rebase automatically instead of requiring a manual "@dependabot rebase"
+    # on every push to staging. Ten PRs were sitting CONFLICTING for weeks.
+    rebase-strategy: "auto"
 
     # Only update direct dependencies — reduces random transitive breakage
     allow:
@@ -101,7 +104,9 @@ updates:
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
-      include: "scope"
+      # No `include: "scope"` here: Dependabot already adds the dependency name
+      # in parentheses, and the scope option produced titles such as
+      # "chore(deps-dev)(deps-dev): …".
 
   # ── GitHub Actions ────────────────────────────────────────────────────
   - package-ecosystem: "github-actions"
@@ -112,6 +117,7 @@ updates:
       time: "08:00"
       timezone: "Africa/Nairobi" # changed from UTC
     open-pull-requests-limit: 5
+    rebase-strategy: "auto"
 
     ignore:
       - dependency-name: "*"
