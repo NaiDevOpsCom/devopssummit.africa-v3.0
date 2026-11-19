@@ -107,14 +107,14 @@ jobs:
 
       # ── 5. Commit + push branch ───────────────────────────────────────────
       - name: Configure git identity
-        if: steps.update.outputs.changes_made == 'true' && inputs.dry_run != 'true'
+        if: steps.update.outputs.changes_made == 'true' && !inputs.dry_run
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create update branch
         id: branch
-        if: steps.update.outputs.changes_made == 'true' && inputs.dry_run != 'true'
+        if: steps.update.outputs.changes_made == 'true' && !inputs.dry_run
         run: |
           # Fixed branch name. Date-stamped branches (chore/node-engine-update-YYYYMMDD)
           # left one PR behind per weekly run — 24 of them by November 2026 — and every
@@ -162,7 +162,7 @@ jobs:
 
       # ── 6. Open / update Pull Request ─────────────────────────────────────
       - name: Create Pull Request
-        if: steps.update.outputs.changes_made == 'true' && inputs.dry_run != 'true'
+        if: steps.update.outputs.changes_made == 'true' && !inputs.dry_run
         env:
           GH_TOKEN: ${{ secrets.NODE_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
@@ -251,8 +251,10 @@ jobs:
               --body-file pr_body.md)
               # Note: if labels don't exist, the second fallback runs without them.
               # Create labels once via: gh label create "node-engine" --color "0075ca" --description "Node.js runtime version update"
-            PR_NUMBER="${PR_URL##*/}"
-            echo "✅ Opened PR #$PR_NUMBER"
+            # Resolve the number from the branch rather than parsing the create
+            # output, which also carries gh's progress lines.
+            PR_NUMBER=$(gh pr view "$BRANCH" --json number --jq '.number')
+            echo "✅ Opened PR #$PR_NUMBER ($PR_URL)"
           fi
 
           # Close PRs opened by earlier runs, which used a date-stamped branch
