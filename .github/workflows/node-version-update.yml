@@ -116,11 +116,12 @@ jobs:
         id: branch
         if: steps.update.outputs.changes_made == 'true' && inputs.dry_run != 'true'
         run: |
-          BRANCH_NAME="chore/node-engine-update-$(date +%Y%m%d)"
+          # Fixed branch name. Date-stamped branches (chore/node-engine-update-YYYYMMDD)
+          # left one PR behind per weekly run — 24 of them by November 2026 — and every
+          # one of them failed the PR title check. A single branch means a single PR
+          # that later runs update in place.
+          BRANCH_NAME="chore/node-engine-update"
           echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
-
-          # Delete existing branch with the same name (from a prior run today)
-          git push origin --delete "$BRANCH_NAME" 2>/dev/null || true
 
           git checkout -b "$BRANCH_NAME"
           git add package.json .nvmrc .github/workflows/ci.yml
@@ -128,13 +129,18 @@ jobs:
           MAINTENANCE_VERSION="${{ steps.update.outputs.maintenance_version }}"
           ACTIVE_VERSION="${{ steps.update.outputs.active_version }}"
 
+          if [ -z "$ACTIVE_VERSION" ]; then
+            echo "❌ Update script did not report an active LTS version"
+            exit 1
+          fi
+
           if [ "$MAINTENANCE_VERSION" = "$ACTIVE_VERSION" ]; then
-            COMMIT_MSG="chore(node): update Node.js engine to latest LTS patches"$'\n\n'
+            COMMIT_MSG="chore(node): raise Node.js floor to ${ACTIVE_VERSION}"$'\n\n'
             COMMIT_MSG="${COMMIT_MSG}- Node.js LTS (Node ${ACTIVE_VERSION}): updated minimum patch + .nvmrc"$'\n\n'
             COMMIT_MSG="${COMMIT_MSG}Automated by: .github/workflows/node-version-update.yml"$'\n'
             COMMIT_MSG="${COMMIT_MSG}Source: https://nodejs.org/en/about/previous-releases"
           else
-            COMMIT_MSG="chore(node): update Node.js engine to latest LTS patches"$'\n\n'
+            COMMIT_MSG="chore(node): raise Node.js floors to ${MAINTENANCE_VERSION} / ${ACTIVE_VERSION}"$'\n\n'
             COMMIT_MSG="${COMMIT_MSG}- Maintenance LTS (Node ${MAINTENANCE_VERSION}): updated minimum patch"$'\n'
             COMMIT_MSG="${COMMIT_MSG}- Active LTS (Node ${ACTIVE_VERSION}): updated minimum patch + .nvmrc"$'\n\n'
             COMMIT_MSG="${COMMIT_MSG}Automated by: .github/workflows/node-version-update.yml"$'\n'
@@ -143,7 +149,15 @@ jobs:
 
           git commit -m "$COMMIT_MSG"
 
-          git push origin "$BRANCH_NAME"
+          # Force-with-lease against the exact commit we just observed, so a
+          # concurrent run can never be clobbered silently. The workflow's
+          # concurrency group already serialises runs; this is the second guard.
+          REMOTE_SHA=$(git ls-remote --heads origin "$BRANCH_NAME" | awk '{print $1}')
+          if [ -n "$REMOTE_SHA" ]; then
+            git push --force-with-lease="refs/heads/${BRANCH_NAME}:${REMOTE_SHA}" origin "$BRANCH_NAME"
+          else
+            git push origin "$BRANCH_NAME"
+          fi
           echo "✅ Branch pushed: $BRANCH_NAME"
 
       # ── 6. Open / update Pull Request ─────────────────────────────────────
@@ -198,7 +212,14 @@ jobs:
           *Automated by [\`.github/workflows/node-version-update.yml\`](../../blob/staging/.github/workflows/node-version-update.yml)*
           EOF
 
-          PR_TITLE="chore(node): update Node.js engine to latest LTS patches"
+          # The PR title check rejects vague imperatives at the start of the
+          # subject ("update", "change", "fix"). "raise" states the effect and
+          # passes, so this PR no longer fails pr-checks.yml rule 3.
+          if [ "$MAINTENANCE_VERSION" = "$ACTIVE_VERSION" ]; then
+            PR_TITLE="chore(node): raise Node.js LTS floor to ${ACTIVE_VERSION}"
+          else
+            PR_TITLE="chore(node): raise Node.js LTS floors to ${MAINTENANCE_VERSION} and ${ACTIVE_VERSION}"
+          fi
 
           # Check if a PR for this branch already exists
           EXISTING_PR=$(gh pr list \
@@ -212,9 +233,10 @@ jobs:
             gh pr edit "$EXISTING_PR" \
               --title "$PR_TITLE" \
               --body-file pr_body.md
+            PR_NUMBER="$EXISTING_PR"
           else
             echo "Opening new PR from $BRANCH → staging"
-            gh pr create \
+            PR_URL=$(gh pr create \
               --base staging \
               --head "$BRANCH" \
               --title "$PR_TITLE" \
@@ -226,9 +248,32 @@ jobs:
               --base staging \
               --head "$BRANCH" \
               --title "$PR_TITLE" \
-              --body-file pr_body.md
+              --body-file pr_body.md)
               # Note: if labels don't exist, the second fallback runs without them.
               # Create labels once via: gh label create "node-engine" --color "0075ca" --description "Node.js runtime version update"
+            PR_NUMBER="${PR_URL##*/}"
+            echo "✅ Opened PR #$PR_NUMBER"
           fi
+
+          # Close PRs opened by earlier runs, which used a date-stamped branch
+          # (chore/node-engine-update-YYYYMMDD) and so could never be updated in
+          # place. Without this, each weekly run left another stale PR behind:
+          # 24 had accumulated by November 2026.
+          gh pr list --state open --limit 100 --json number,headRefName \
+            --jq '.[] | select(.headRefName | test("^chore/node-engine-update-[0-9]{8}$")) | .number' |
+          while read -r OLD_PR; do
+            if [ -z "$OLD_PR" ]; then
+              continue
+            fi
+            if [ "$OLD_PR" = "$PR_NUMBER" ]; then
+              continue
+            fi
+            if gh pr close "$OLD_PR" --delete-branch \
+              --comment "Superseded by #${PR_NUMBER}, which keeps this update on the permanent ${BRANCH} branch. Earlier runs created a new date-stamped branch each week, so this PR could not be updated in place."; then
+              echo "Closed superseded PR #$OLD_PR"
+            else
+              echo "⚠️  Could not close superseded PR #$OLD_PR"
+            fi
+          done
 
           echo "✅ Pull request created/updated."
