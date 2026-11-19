@@ -1,0 +1,13 @@
+{
+  "$comment": [
+    "Time-boxed exceptions for the all-dependencies audit gate (scripts/audit-gate.mjs).",
+    "Only HIGH and CRITICAL advisories are enforced; production dependencies are",
+    "audited separately in CI with no exceptions at all.",
+    "Each entry requires: package, id (GHSA-xxxx-xxxx-xxxx), expires (YYYY-MM-DD), reason.",
+    "An entry stops suppressing the advisory once expires has passed, so CI starts",
+    "failing again unless the entry is renewed or the dependency is fixed.",
+    "Use this only for advisories with no patched release, or whose only fix is a",
+    "breaking downgrade of a parent package. Never use it for production dependencies."
+  ],
+  "allow": []
+}

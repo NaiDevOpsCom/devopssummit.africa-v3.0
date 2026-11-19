@@ -30,6 +30,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "audit:deps": "node scripts/audit-gate.mjs",
     "fetch-gallery": "tsx scripts/fetch-gallery.ts",
     "prebuild": "tsx scripts/fetch-gallery.ts",
     "prebuild:bundle": "tsx scripts/fetch-gallery.ts",
